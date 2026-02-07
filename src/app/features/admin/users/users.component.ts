@@ -17,6 +17,12 @@ import { UiInputComponent } from '../../../shared/components/ui-input/ui-input.c
         <app-ui-button variant="primary" (onClick)="openModal()">NUEVO USUARIO</app-ui-button>
       </div>
 
+      <!-- Top Level Error Message -->
+      <div *ngIf="topErrorMessage" class="p-3 bg-red-500/10 border border-red-500/20 rounded-[var(--radius-sm)] text-red-400 text-xs font-mono flex justify-between items-center animate-fade-in">
+         <span>{{ topErrorMessage }}</span>
+         <button (click)="topErrorMessage = null" class="text-white/50 hover:text-white">&times;</button>
+      </div>
+
       <!-- Table -->
       <div class="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-md)] overflow-hidden">
         <div class="overflow-x-auto">
@@ -108,6 +114,7 @@ export class UsersComponent {
   isSaving = false;
   editingId: string | null = null;
   errorMessage: string | null = null;
+  topErrorMessage: string | null = null;
 
   userForm: FormGroup = this.fb.group({
     username: ['', [Validators.required]],
@@ -161,7 +168,12 @@ export class UsersComponent {
     if (this.userForm.invalid) return;
 
     this.isSaving = true;
-    const formData = this.userForm.value;
+    const formData = { ...this.userForm.value };
+
+    // If editing and password is empty, set to undefined to not update it
+    if (this.isEditing && !formData.password) {
+      formData.password = undefined;
+    }
 
     const request = this.isEditing && this.editingId
       ? this.userService.update(this.editingId, formData)
@@ -184,12 +196,13 @@ export class UsersComponent {
   deleteUser(id: string) {
     if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
 
+    this.topErrorMessage = null;
     this.userService.remove(id).subscribe({
       next: () => {
         this.loadUsers();
       },
       error: (err) => {
-        alert(err.message || 'Error al eliminar usuario');
+        this.topErrorMessage = err.message || 'Error al eliminar usuario';
         console.error('Error deleting user', err);
       }
     });

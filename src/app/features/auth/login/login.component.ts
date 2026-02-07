@@ -18,7 +18,7 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
       
       <div class="w-full max-w-md p-4 relative z-10">
         <div class="mb-8 text-center">
-          <h1 class="text-4xl font-display font-medium tracking-tight text-white mb-2">SGE BITECSO</h1>
+          <h1 class="text-4xl font-display font-medium tracking-tight text-white mb-2">SGE</h1>
           <p class="text-[var(--primary)] font-mono text-sm uppercase tracking-[0.2em]">Acceso al Centro de Comando</p>
         </div>
         

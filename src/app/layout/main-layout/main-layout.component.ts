@@ -24,7 +24,7 @@ import { User } from '../../core/models/user.model';
         <!-- Logo Area -->
         <div class="h-16 flex items-center justify-between px-6 border-b border-[var(--border)] bg-[var(--surface)]">
           <div class="text-white font-display font-medium tracking-tight text-xl">
-            SGE <span class="text-[var(--primary)]">BITECSO</span>
+            SGE
           </div>
           <button (click)="toggleSidebar()" class="lg:hidden text-[var(--muted)]">
             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

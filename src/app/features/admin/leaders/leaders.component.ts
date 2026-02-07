@@ -17,6 +17,12 @@ import { UiInputComponent } from '../../../shared/components/ui-input/ui-input.c
         <app-ui-button variant="primary" (onClick)="openModal()">NUEVO LÍDER</app-ui-button>
       </div>
 
+      <!-- Top Level Error Message -->
+      <div *ngIf="topErrorMessage" class="p-3 bg-red-500/10 border border-red-500/20 rounded-[var(--radius-sm)] text-red-400 text-xs font-mono flex justify-between items-center animate-fade-in">
+         <span>{{ topErrorMessage }}</span>
+         <button (click)="topErrorMessage = null" class="text-white/50 hover:text-white">&times;</button>
+      </div>
+
       <!-- Table -->
       <div class="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-md)] overflow-hidden">
         <div class="overflow-x-auto">
@@ -105,6 +111,7 @@ export class LeadersComponent {
   isSaving = false;
   editingId: string | null = null;
   errorMessage: string | null = null;
+  topErrorMessage: string | null = null;
 
   leaderForm: FormGroup = this.fb.group({
     cedula: ['', [Validators.required]],
@@ -177,10 +184,11 @@ export class LeadersComponent {
   deleteLeader(id: string) {
     if (!confirm('¿Estás seguro de eliminar este líder?')) return;
 
+    this.topErrorMessage = null;
     this.leaderService.remove(id).subscribe({
       next: () => this.loadLeaders(),
       error: (err) => {
-        alert(err.message || 'Error al eliminar líder');
+        this.topErrorMessage = err.message || 'Error al eliminar líder';
         console.error('Error deleting leader', err);
       }
     });
