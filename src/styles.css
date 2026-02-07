@@ -1,3 +1,115 @@
-/* You can add global styles to this file, and also import other style files */
-
 @import "tailwindcss";
+
+@theme {
+  /* War Room Palette - Zinc (Base) */
+  --color-zinc-50: #fafafa;
+  --color-zinc-100: #f4f4f5;
+  --color-zinc-200: #e4e4e7;
+  --color-zinc-300: #d4d4d8;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-500: #71717a;
+  --color-zinc-600: #52525b;
+  --color-zinc-700: #3f3f46;
+  --color-zinc-800: #27272a;
+  --color-zinc-900: #18181b;
+  --color-zinc-950: #09090b;
+
+  /* War Room Palette - Signal Blue (Primary) */
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
+  --color-blue-950: #172554;
+
+  /* War Room Palette - Urgent Amber (Secondary/Action) */
+  --color-amber-500: #f59e0b;
+  
+  /* Status Colors */
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+
+  /* Geometry */
+  --radius-sm: 0.125rem; /* 2px - Sharp/Technical key */
+  --radius-md: 0.25rem;
+  --radius-lg: 0.375rem;
+
+  /* Typography */
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+}
+
+@layer base {
+  :root {
+    /* Token Aliases */
+    --background: var(--color-zinc-950);
+    --surface: var(--color-zinc-900);
+    --foreground: var(--color-zinc-100);
+    --muted: var(--color-zinc-400);
+    --border: var(--color-zinc-800);
+    --primary: var(--color-blue-500);
+    --primary-foreground: #ffffff;
+    --secondary: var(--color-amber-500);
+  }
+
+  html {
+    @apply h-full antialiased;
+    font-size: 16px;
+  }
+
+  body {
+    @apply h-full bg-[var(--background)] text-[var(--foreground)] font-sans;
+    /* Force dark mode dominance */
+    color-scheme: dark;
+  }
+
+  /* Headings - Technical & Sharp */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-medium tracking-tight text-white;
+  }
+
+  h1 { 
+    @apply text-4xl lg:text-5xl tracking-tighter;
+    /* War Room Header Style */
+  }
+
+  /* Inputs - Technical Reset */
+  input, textarea, select {
+    @apply bg-[var(--surface)] border border-[var(--border)] text-sm rounded-[var(--radius-sm)] 
+           placeholder:text-[var(--muted)] 
+           focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)]
+           transition-all duration-150 ease-out;
+  }
+
+  /* Buttons - Command Center Style */
+  button {
+    @apply font-medium tracking-wide active:scale-95 transition-transform duration-75;
+  }
+}
+
+@layer components {
+  /* The "Glass" Card - Technical 1px Border */
+  .card-glass {
+    @apply bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-sm)] relative overflow-hidden;
+  }
+  
+  .card-glass::after {
+    /* Inner Glow Simulation */
+    content: "";
+    @apply absolute inset-0 pointer-events-none border border-white/5 rounded-[var(--radius-sm)];
+  }
+
+  /* Status Badges */
+  .badge-success {
+    @apply bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 text-xs font-mono uppercase tracking-wider rounded-[var(--radius-sm)];
+  }
+  
+  .badge-danger {
+    @apply bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 text-xs font-mono uppercase tracking-wider rounded-[var(--radius-sm)];
+  }
+}
