@@ -4,10 +4,10 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
-    selector: 'app-main-layout',
-    standalone: true,
-    imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
-    template: `
+  selector: 'app-main-layout',
+  standalone: true,
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  template: `
     <div class="flex h-screen overflow-hidden bg-[var(--background)] texture-dots">
       <!-- Sidebar (The "Rack") -->
       <aside class="w-64 bg-[var(--surface)] border-r border-[var(--border)] flex flex-col relative z-20">
@@ -21,7 +21,7 @@ import { AuthService } from '../../core/services/auth.service';
         <!-- Navigation -->
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
           <div class="text-xs font-mono text-[var(--muted)] uppercase tracking-wider mb-2 px-2">
-            Command Modules
+            Módulos de Comando
           </div>
 
           <!-- Admin Links -->
@@ -30,24 +30,24 @@ import { AuthService } from '../../core/services/auth.service';
                routerLinkActive="bg-white/5 text-white border-white/10" 
                class="flex items-center px-3 py-2 text-sm font-medium text-[var(--muted)] rounded-[var(--radius-sm)] border border-transparent hover:bg-white/5 hover:text-white transition-all group">
               <span class="w-2 h-2 rounded-full bg-[var(--primary)] mr-3 opacity-50 group-hover:opacity-100 group-[.active]:opacity-100 transition-opacity"></span>
-              Mission Control
+              Control de Misión
             </a>
             <a routerLink="/admin/users" 
                routerLinkActive="bg-white/5 text-white border-white/10" 
                class="flex items-center px-3 py-2 text-sm font-medium text-[var(--muted)] rounded-[var(--radius-sm)] border border-transparent hover:bg-white/5 hover:text-white transition-all group">
                <span class="w-2 h-2 rounded-full bg-[var(--muted)] mr-3 opacity-50 group-hover:opacity-100"></span>
-              Operatives
+              Operativos
             </a>
           </ng-container>
 
           <!-- Digitador Links -->
           <ng-container *ngIf="!isAdmin()">
-            <a routerLink="/digitador/register" 
-               routerLinkActive="bg-white/5 text-white border-white/10" 
-               class="flex items-center px-3 py-2 text-sm font-medium text-[var(--muted)] rounded-[var(--radius-sm)] border border-transparent hover:bg-white/5 hover:text-white transition-all group">
-               <span class="w-2 h-2 rounded-full bg-[var(--secondary)] mr-3 opacity-50 group-hover:opacity-100"></span>
-              Voter Intake
-            </a>
+              <a routerLink="/digitador/register" 
+                 routerLinkActive="bg-white/5 text-white border-white/10" 
+                 class="flex items-center px-3 py-2 text-sm font-medium text-[var(--muted)] rounded-[var(--radius-sm)] border border-transparent hover:bg-white/5 hover:text-white transition-all group">
+                 <span class="w-2 h-2 rounded-full bg-[var(--secondary)] mr-3 opacity-50 group-hover:opacity-100"></span>
+                Registro de Votantes
+              </a>
           </ng-container>
         </nav>
 
@@ -77,7 +77,7 @@ import { AuthService } from '../../core/services/auth.service';
         <!-- Topbar (if needed for breadcrumbs or extra actions) -->
         <header class="h-16 flex items-center justify-between px-6 border-b border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-sm sticky top-0 z-30">
           <div class="text-[var(--muted)] font-mono text-xs">
-            SYSTEM STATUS: <span class="text-emerald-500">ONLINE</span> // {{ currentTime | date:'mediumTime' }}
+            ESTADO DEL SISTEMA: <span class="text-emerald-500">EN LÍNEA</span> // {{ currentTime | date:'mediumTime' }}
           </div>
         </header>
 
@@ -89,20 +89,20 @@ import { AuthService } from '../../core/services/auth.service';
   `
 })
 export class MainLayoutComponent {
-    authService = inject(AuthService);
-    user = this.authService.currentUser;
-    currentTime = new Date();
+  authService = inject(AuthService);
+  user = this.authService.currentUser;
+  currentTime = new Date();
 
-    isAdmin() {
-        return this.authService.isAdmin();
-    }
+  isAdmin() {
+    return this.authService.isAdmin();
+  }
 
-    logout() {
-        this.authService.logout();
-    }
+  logout() {
+    this.authService.logout();
+  }
 
-    userInitials() {
-        const name = this.user()?.username || 'U';
-        return name.substring(0, 2).toUpperCase();
-    }
+  userInitials() {
+    const name = this.user()?.username || 'U';
+    return name.substring(0, 2).toUpperCase();
+  }
 }

@@ -19,31 +19,31 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
       <div class="w-full max-w-md p-4 relative z-10">
         <div class="mb-8 text-center">
           <h1 class="text-4xl font-display font-medium tracking-tight text-white mb-2">SGE BITECSO</h1>
-          <p class="text-[var(--primary)] font-mono text-sm uppercase tracking-[0.2em]">Command Center Access</p>
+          <p class="text-[var(--primary)] font-mono text-sm uppercase tracking-[0.2em]">Acceso al Centro de Comando</p>
         </div>
         
         <app-ui-card>
           <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
             <app-ui-input 
-              label="USERNAME" 
-              placeholder="Enter your username" 
+              label="USUARIO" 
+              placeholder="Ingrese su usuario" 
               formControlName="username"
-              [error]="'Username is required'"
+              [error]="'El usuario es requerido'"
             ></app-ui-input>
 
             <div class="mt-4">
                <app-ui-input 
-                label="PASSWORD" 
-                placeholder="Enter your password" 
+                label="CONTRASEÑA" 
+                placeholder="Ingrese su contraseña" 
                 type="password"
                 formControlName="password"
-                [error]="'Password is required'"
+                [error]="'La contraseña es requerida'"
               ></app-ui-input>
             </div>
             
             <div class="mt-6">
               <app-ui-button type="submit" [loading]="loading" [fullWidth]="true" variant="primary">
-                AUTHENTICATE
+                AUTENTICAR
               </app-ui-button>
             </div>
 
@@ -54,7 +54,7 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
         </app-ui-card>
         
         <div class="mt-8 text-center text-[var(--muted)] text-xs font-mono">
-          SECURE CONNECTION ESTABLISHED
+          CONEXIÓN SEGURA ESTABLECIDA
           <br>
           v1.0.0-alpha
         </div>
@@ -94,7 +94,7 @@ export class LoginComponent {
           },
           error: (err) => {
             this.loading = false;
-            this.error = 'ACCESS DENIED: Invalid Credentials';
+            this.error = 'ACCESO DENEGADO: Credenciales Inválidas';
           }
         });
       }
