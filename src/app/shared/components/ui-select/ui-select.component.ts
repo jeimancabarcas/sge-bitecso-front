@@ -45,10 +45,12 @@ export interface SelectOption {
         <div class="absolute bottom-0 left-0 h-[2px] bg-[var(--primary)] w-0 transition-all duration-300" [class.w-full]="isOpen"></div>
 
         <!-- Dropdown Menu -->
-        <div *ngIf="isOpen" class="absolute z-50 w-full mt-1 bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-sm)] shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+        <div *ngIf="isOpen" 
+             [ngStyle]="dropdownStyle"
+             class="fixed z-[9999] bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-sm)] shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
             
             <!-- Search Input -->
-            <div class="p-2 border-b border-[var(--border)]">
+            <div *ngIf="searchable" class="p-2 border-b border-[var(--border)]">
                 <input 
                     type="text" 
                     [placeholder]="'Buscar...'" 
@@ -106,6 +108,7 @@ export class UiSelectComponent implements ControlValueAccessor {
 
     @Input() required: boolean = false;
     @Input() error: string = '';
+    @Input() searchable: boolean = true; // New input to toggle search
 
     value: any = '';
     disabled: boolean = false;
@@ -113,6 +116,9 @@ export class UiSelectComponent implements ControlValueAccessor {
 
     // Signals for filtering
     filterQuery = signal('');
+
+    // Dropdown positioning
+    dropdownStyle: { [key: string]: string } = {};
 
     // Computed filtered options
     filteredOptions = computed(() => {
@@ -144,16 +150,58 @@ export class UiSelectComponent implements ControlValueAccessor {
         }
     }
 
+    // Close on scroll to avoid detached dropdowns
+    @HostListener('window:scroll')
+    onScroll() {
+        if (this.isOpen) this.isOpen = false;
+    }
+
+    @HostListener('window:resize')
+    onResize() {
+        if (this.isOpen) this.isOpen = false;
+    }
+
     toggleDropdown() {
         if (this.disabled) return;
-        this.isOpen = !this.isOpen;
-        if (this.isOpen) {
+
+        if (!this.isOpen) {
+            this.updatePosition();
+            this.isOpen = true;
+
             // Focus search input on open (timeout to wait for render)
             setTimeout(() => {
                 this.elementRef.nativeElement.querySelector('input')?.focus();
             }, 50);
         } else {
+            this.isOpen = false;
             this.onTouched();
+        }
+    }
+
+    private updatePosition() {
+        const rect = this.elementRef.nativeElement.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const spaceBelow = viewportHeight - rect.bottom;
+        const dropdownHeight = 250; // Estimate max height (max-h-60 + padding)
+
+        const showAbove = spaceBelow < dropdownHeight;
+
+        if (showAbove) {
+            this.dropdownStyle = {
+                'position': 'fixed',
+                'bottom': `${viewportHeight - rect.top + 4}px`,
+                'left': `${rect.left}px`,
+                'width': `${rect.width}px`,
+                'min-width': '120px'
+            };
+        } else {
+            this.dropdownStyle = {
+                'position': 'fixed',
+                'top': `${rect.bottom + 4}px`,
+                'left': `${rect.left}px`,
+                'width': `${rect.width}px`,
+                'min-width': '120px'
+            };
         }
     }
 

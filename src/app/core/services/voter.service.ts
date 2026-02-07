@@ -22,7 +22,12 @@ export interface Voter {
     created_at?: string;
     updated_at?: string;
     mesa?: number; // Optional now
-    digitador?: string;
+    digitador?: string; // Keep for backward compat if needed, but prefer created_by
+    created_by?: {
+        id: string;
+        username: string;
+        role: string;
+    };
     fechaRegistro?: Date;
 }
 
@@ -40,6 +45,34 @@ export interface DashboardStats {
     recentActivity: Voter[];
 }
 
+export interface RealDashboardStats { // New interface based on user request
+    total: number;
+    success: number;
+    failed: number;
+    error: number;
+    pending: number;
+}
+
+export interface DigitadorStats {
+    id: string;
+    username: string;
+    total: number;
+    success: number;
+    failed: number;
+    error: number;
+    pending: number;
+}
+
+export interface LeaderStats {
+    id: string;
+    name: string;
+    total: number;
+    success: number;
+    failed: number;
+    error: number;
+    pending: number;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -52,6 +85,22 @@ export class VoterService {
         return theMockStats();
     }
 
+    getDashboardStats(): Observable<RealDashboardStats> {
+        return this.http.get<RealDashboardStats>(`${this.apiUrl}/voters/dashboard-stats`);
+    }
+
+    getDigitatorsStats(): Observable<DigitadorStats[]> {
+        return this.http.get<DigitadorStats[]>(`${this.apiUrl}/voters/digitators-stats`);
+    }
+
+    getLeadersStats(): Observable<LeaderStats[]> {
+        return this.http.get<LeaderStats[]>(`${this.apiUrl}/voters/leaders-stats`);
+    }
+
+    getReport(): Observable<Blob> {
+        return this.http.get(`${this.apiUrl}/voters/report`, { responseType: 'blob' });
+    }
+
     getLeaders(): Observable<Leader[]> {
         return this.http.get<Leader[]>(`${this.apiUrl}/leaders`);
     }
@@ -62,6 +111,12 @@ export class VoterService {
 
     getMyRecords(page: number = 1, limit: number = 10): Observable<VoterResponse> {
         return this.http.get<VoterResponse>(`${this.apiUrl}/voters/my-records`, {
+            params: { page: page.toString(), limit: limit.toString() }
+        });
+    }
+
+    getVoters(page: number = 1, limit: number = 10): Observable<VoterResponse> {
+        return this.http.get<VoterResponse>(`${this.apiUrl}/voters`, {
             params: { page: page.toString(), limit: limit.toString() }
         });
     }

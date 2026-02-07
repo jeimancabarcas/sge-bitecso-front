@@ -9,13 +9,27 @@ import { AuthService } from '../../core/services/auth.service';
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   template: `
     <div class="flex h-screen overflow-hidden bg-[var(--background)] texture-dots">
+      
+      <!-- Mobile Overlay -->
+      <div *ngIf="isSidebarOpen" 
+           (click)="toggleSidebar()"
+           class="fixed inset-0 bg-black/50 z-20 lg:hidden backdrop-blur-sm transition-opacity">
+      </div>
+
       <!-- Sidebar (The "Rack") -->
-      <aside class="w-64 bg-[var(--surface)] border-r border-[var(--border)] flex flex-col relative z-20">
+      <aside [class.translate-x-0]="isSidebarOpen" 
+             [class.-translate-x-full]="!isSidebarOpen"
+             class="fixed lg:relative w-64 h-full bg-[var(--surface)] border-r border-[var(--border)] flex flex-col z-30 transition-transform duration-300 lg:translate-x-0">
         <!-- Logo Area -->
-        <div class="h-16 flex items-center px-6 border-b border-[var(--border)] bg-[var(--surface)]">
+        <div class="h-16 flex items-center justify-between px-6 border-b border-[var(--border)] bg-[var(--surface)]">
           <div class="text-white font-display font-medium tracking-tight text-xl">
             SGE <span class="text-[var(--primary)]">BITECSO</span>
           </div>
+          <button (click)="toggleSidebar()" class="lg:hidden text-[var(--muted)]">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
         <!-- Navigation -->
@@ -27,22 +41,18 @@ import { AuthService } from '../../core/services/auth.service';
           <!-- Admin Links -->
           <ng-container *ngIf="isAdmin()">
             <a routerLink="/admin/dashboard" 
+               (click)="closeSidebarOnMobile()"
                routerLinkActive="bg-white/5 text-white border-white/10" 
                class="flex items-center px-3 py-2 text-sm font-medium text-[var(--muted)] rounded-[var(--radius-sm)] border border-transparent hover:bg-white/5 hover:text-white transition-all group">
-              <span class="w-2 h-2 rounded-full bg-[var(--primary)] mr-3 opacity-50 group-hover:opacity-100 group-[.active]:opacity-100 transition-opacity"></span>
-              Control de Misión
+              Dashboard
             </a>
-            <a routerLink="/admin/users" 
-               routerLinkActive="bg-white/5 text-white border-white/10" 
-               class="flex items-center px-3 py-2 text-sm font-medium text-[var(--muted)] rounded-[var(--radius-sm)] border border-transparent hover:bg-white/5 hover:text-white transition-all group">
-               <span class="w-2 h-2 rounded-full bg-[var(--muted)] mr-3 opacity-50 group-hover:opacity-100"></span>
-              Operativos
-            </a>
+
           </ng-container>
 
           <!-- Digitador Links -->
           <ng-container *ngIf="!isAdmin()">
               <a routerLink="/digitador/register" 
+                 (click)="closeSidebarOnMobile()"
                  routerLinkActive="bg-white/5 text-white border-white/10" 
                  class="flex items-center px-3 py-2 text-sm font-medium text-[var(--muted)] rounded-[var(--radius-sm)] border border-transparent hover:bg-white/5 hover:text-white transition-all group">
                  <span class="w-2 h-2 rounded-full bg-[var(--secondary)] mr-3 opacity-50 group-hover:opacity-100"></span>
@@ -73,15 +83,22 @@ import { AuthService } from '../../core/services/auth.service';
       </aside>
 
       <!-- Main Content -->
-      <main class="flex-1 overflow-auto relative z-10">
-        <!-- Topbar (if needed for breadcrumbs or extra actions) -->
+      <main class="flex-1 overflow-auto relative z-10 w-full">
+        <!-- Topbar -->
         <header class="h-16 flex items-center justify-between px-6 border-b border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-sm sticky top-0 z-30">
-          <div class="text-[var(--muted)] font-mono text-xs">
-            ESTADO DEL SISTEMA: <span class="text-emerald-500">EN LÍNEA</span> // {{ currentTime | date:'mediumTime' }}
+          <div class="flex items-center">
+              <button (click)="toggleSidebar()" class="mr-4 lg:hidden text-[var(--muted)]">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <div class="text-[var(--muted)] font-mono text-xs hidden sm:block">
+                ESTADO DEL SISTEMA: <span class="text-emerald-500">EN LÍNEA</span> // {{ currentTime | date:'mediumTime' }}
+              </div>
           </div>
         </header>
 
-        <div class="p-6">
+        <div class="p-4 sm:p-6">
           <router-outlet></router-outlet>
         </div>
       </main>
@@ -92,6 +109,7 @@ export class MainLayoutComponent {
   authService = inject(AuthService);
   user = this.authService.currentUser;
   currentTime = new Date();
+  isSidebarOpen = false;
 
   isAdmin() {
     return this.authService.isAdmin();
@@ -104,5 +122,13 @@ export class MainLayoutComponent {
   userInitials() {
     const name = this.user()?.username || 'U';
     return name.substring(0, 2).toUpperCase();
+  }
+
+  toggleSidebar() {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  closeSidebarOnMobile() {
+    this.isSidebarOpen = false;
   }
 }

@@ -3,10 +3,10 @@ import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NgControl, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
-    selector: 'app-ui-input',
-    standalone: true,
-    imports: [CommonModule, ReactiveFormsModule],
-    template: `
+  selector: 'app-ui-input',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  template: `
     <div class="mb-4">
       <label *ngIf="label" class="block text-xs font-medium text-[var(--muted)] uppercase tracking-wider mb-1.5 ml-0.5">
         {{ label }} <span *ngIf="required" class="text-[var(--secondary)]">*</span>
@@ -17,7 +17,7 @@ import { ControlValueAccessor, NgControl, ReactiveFormsModule } from '@angular/f
           [placeholder]="placeholder"
           [disabled]="disabled"
           [value]="value"
-          (input)="onChange($any($event.target).value)"
+          (input)="onInput($any($event.target).value)"
           (blur)="onTouched()"
           class="block w-full px-3 py-2 bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-sm)] 
                  text-[var(--foreground)] placeholder-[var(--muted)] 
@@ -36,41 +36,46 @@ import { ControlValueAccessor, NgControl, ReactiveFormsModule } from '@angular/f
   `
 })
 export class UiInputComponent implements ControlValueAccessor {
-    @Input() label: string = '';
-    @Input() type: string = 'text';
-    @Input() placeholder: string = '';
-    @Input() required: boolean = false;
-    @Input() error: string = '';
+  @Input() label: string = '';
+  @Input() type: string = 'text';
+  @Input() placeholder: string = '';
+  @Input() required: boolean = false;
+  @Input() error: string = '';
 
-    value: string = '';
-    disabled: boolean = false;
+  value: string = '';
+  disabled: boolean = false;
 
-    constructor(@Optional() @Self() public ngControl: NgControl) {
-        if (this.ngControl) {
-            this.ngControl.valueAccessor = this;
-        }
+  constructor(@Optional() @Self() public ngControl: NgControl) {
+    if (this.ngControl) {
+      this.ngControl.valueAccessor = this;
     }
+  }
 
-    get invalid(): boolean {
-        return !!(this.ngControl?.invalid && this.ngControl?.touched);
-    }
+  get invalid(): boolean {
+    return !!(this.ngControl?.invalid && this.ngControl?.touched);
+  }
 
-    onChange = (value: string) => { };
-    onTouched = () => { };
+  onChange = (value: string) => { };
+  onTouched = () => { };
 
-    writeValue(value: string): void {
-        this.value = value;
-    }
+  onInput(value: string) {
+    this.value = value;
+    this.onChange(value);
+  }
 
-    registerOnChange(fn: any): void {
-        this.onChange = fn;
-    }
+  writeValue(value: string): void {
+    this.value = value;
+  }
 
-    registerOnTouched(fn: any): void {
-        this.onTouched = fn;
-    }
+  registerOnChange(fn: any): void {
+    this.onChange = fn;
+  }
 
-    setDisabledState(isDisabled: boolean): void {
-        this.disabled = isDisabled;
-    }
+  registerOnTouched(fn: any): void {
+    this.onTouched = fn;
+  }
+
+  setDisabledState(isDisabled: boolean): void {
+    this.disabled = isDisabled;
+  }
 }
