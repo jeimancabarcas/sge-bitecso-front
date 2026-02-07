@@ -1,7 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { User } from '../../core/models/user.model';
 
 @Component({
   selector: 'app-main-layout',
@@ -47,9 +48,23 @@ import { AuthService } from '../../core/services/auth.service';
               Dashboard
             </a>
 
+            <a routerLink="/admin/leaders" 
+               (click)="closeSidebarOnMobile()"
+               routerLinkActive="bg-white/5 text-white border-white/10" 
+               class="flex items-center px-3 py-2 text-sm font-medium text-[var(--muted)] rounded-[var(--radius-sm)] border border-transparent hover:bg-white/5 hover:text-white transition-all group">
+               Gestión de Líderes
+            </a>
+
+            <a routerLink="/admin/users" 
+               (click)="closeSidebarOnMobile()"
+               routerLinkActive="bg-white/5 text-white border-white/10" 
+               class="flex items-center px-3 py-2 text-sm font-medium text-[var(--muted)] rounded-[var(--radius-sm)] border border-transparent hover:bg-white/5 hover:text-white transition-all group">
+               Gestión de Digitadores
+            </a>
+
           </ng-container>
 
-          <!-- Digitador Links -->
+          <!-- Digitador Links (Digitadores Only) -->
           <ng-container *ngIf="!isAdmin()">
               <a routerLink="/digitador/register" 
                  (click)="closeSidebarOnMobile()"
@@ -69,7 +84,7 @@ import { AuthService } from '../../core/services/auth.service';
                 {{ userInitials() }}
               </div>
               <div class="flex flex-col">
-                <span class="text-sm font-medium text-white truncate max-w-[100px]">{{ user()?.username }}</span>
+                <span class="text-sm font-medium text-white truncate max-w-[100px]">{{ user()?.fullName || user()?.username }}</span>
                 <span class="text-xs text-[var(--muted)] capitalize">{{ user()?.role }}</span>
               </div>
             </div>
@@ -107,7 +122,7 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class MainLayoutComponent {
   authService = inject(AuthService);
-  user = this.authService.currentUser;
+  user: Signal<User | null> = this.authService.currentUser;
   currentTime = new Date();
   isSidebarOpen = false;
 
@@ -120,7 +135,7 @@ export class MainLayoutComponent {
   }
 
   userInitials() {
-    const name = this.user()?.username || 'U';
+    const name = this.user()?.fullName || this.user()?.username || 'U';
     return name.substring(0, 2).toUpperCase();
   }
 

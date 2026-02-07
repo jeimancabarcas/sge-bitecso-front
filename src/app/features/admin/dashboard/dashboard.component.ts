@@ -86,8 +86,14 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
                   <tr *ngFor="let voter of voters" class="group hover:bg-white/5 transition-colors">
                     <td class="p-3 font-mono text-white">{{ voter.cedula }}</td>
                     <td class="p-3 text-[var(--foreground)]">{{ voter.nombre }}</td>
-                    <td class="p-3">
-                      <span class="badge-success">Mesa {{ voter.mesa || 'N/A' }}</span>
+                    <td class="p-3 overflow-visible">
+                      <div class="inline-block relative" 
+                           (mouseenter)="showTooltip($event, voter)" 
+                           (mouseleave)="hideTooltip()">
+                        <span class="badge-success cursor-help">
+                            Mesa {{ voter.mesa || voter.detail?.table || 'N/A' }}
+                        </span>
+                      </div>
                     </td>
                     <td class="p-3 text-sm text-[var(--muted)]">{{ voter.created_by?.username || voter.digitador || 'N/A' }}</td>
                     <td class="p-3 text-xs font-mono text-[var(--muted)]">
@@ -278,6 +284,30 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
           </app-ui-card>
         </div>
       </div>
+      <!-- Fixed Tooltip Portal -->
+      <div *ngIf="hoveredVoter && hoveredVoter.detail" 
+           class="fixed z-[100] w-64 bg-[#0f172a] border border-[var(--primary)]/30 text-xs text-white p-3 rounded-[var(--radius-sm)] shadow-[0_0_20px_rgba(0,0,0,0.8)] pointer-events-none transition-opacity duration-150 animate-fade-in"
+           [style.top.px]="tooltipPosition.top"
+           [style.left.px]="tooltipPosition.left">
+          
+          <div class="font-bold mb-2 text-[var(--primary)] uppercase tracking-wide border-b border-white/10 pb-1">
+              {{ hoveredVoter.detail!.polling_station }}
+          </div>
+          
+          <div class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px]">
+              <span class="text-[var(--muted)]">Mesa:</span> 
+              <span class="text-white font-mono">{{ hoveredVoter.detail!.table }}</span>
+              
+              <span class="text-[var(--muted)]">Municipio:</span> 
+              <span class="text-white">{{ hoveredVoter.detail!.municipality }}</span>
+              
+              <span class="text-[var(--muted)]">Depto:</span> 
+              <span class="text-white">{{ hoveredVoter.detail!.department }}</span>
+              
+              <span class="text-[var(--muted)]">Dirección:</span> 
+              <span class="text-white truncate">{{ hoveredVoter.detail!.address }}</span>
+          </div>
+      </div>
     </div>
   `
 })
@@ -287,6 +317,10 @@ export class DashboardComponent implements OnInit {
     realStats: RealDashboardStats | null = null; // New property
     digitatorsStats: DigitadorStats[] = []; // New property
     leadersStats: LeaderStats[] = []; // New property
+
+    // Tooltip State
+    hoveredVoter: Voter | null = null;
+    tooltipPosition = { top: 0, left: 0 };
 
     // Voter Pagination
     voters: Voter[] = [];
@@ -392,5 +426,30 @@ export class DashboardComponent implements OnInit {
     calculateProgress(value: number = 0, total: number = 0): number {
         if (!total || total === 0) return 0;
         return Math.round((value / total) * 100);
+    }
+
+    showTooltip(event: MouseEvent, voter: Voter) {
+        if (!voter.detail) return;
+
+        const target = event.currentTarget as HTMLElement;
+        const rect = target.getBoundingClientRect();
+
+        // Calculate position (centered above the element)
+        // Check if closer to top or bottom to flip? For now, default to above.
+        // If top < 150px, show below.
+
+        const tooltipHeight = 140; // Approx
+        const showBelow = rect.top < 150;
+
+        this.hoveredVoter = voter;
+
+        this.tooltipPosition = {
+            left: rect.left + (rect.width / 2) - 128, // Center (256px width / 2)
+            top: showBelow ? (rect.bottom + 10) : (rect.top - tooltipHeight - 10)
+        };
+    }
+
+    hideTooltip() {
+        this.hoveredVoter = null;
     }
 }

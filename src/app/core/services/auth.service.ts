@@ -8,6 +8,7 @@ import { jwtDecode } from 'jwt-decode';
 
 interface JwtPayload {
     username: string;
+    fullName: string; // Added field
     sub: string;
     role: string;
     exp: number;
@@ -46,10 +47,11 @@ export class AuthService {
                 const decoded = jwtDecode<JwtPayload>(token);
 
                 const user: User = {
-                    id: decoded.sub, // Mapping sub to id
-                    cedula: decoded.username, // Assuming username is used as cedula/display
+                    id: decoded.sub,
+                    cedula: decoded.username,
                     username: decoded.username,
-                    nombre: decoded.username,
+                    fullName: decoded.fullName || decoded.username,
+                    nombre: decoded.fullName || decoded.username,
                     role: decoded.role as 'admin' | 'digitador'
                 };
 

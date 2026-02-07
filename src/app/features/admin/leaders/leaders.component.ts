@@ -1,0 +1,188 @@
+import { Component, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { LeaderService } from '../../../core/services/leader.service';
+import { Leader } from '../../../core/models/leader.model';
+import { UiButtonComponent } from '../../../shared/components/ui-button/ui-button.component';
+import { UiInputComponent } from '../../../shared/components/ui-input/ui-input.component';
+
+@Component({
+  selector: 'app-leaders',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, UiButtonComponent, UiInputComponent],
+  template: `
+    <div class="space-y-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-display font-medium text-white tracking-tight">GESTIÓN DE LÍDERES</h2>
+        <app-ui-button variant="primary" (onClick)="openModal()">NUEVO LÍDER</app-ui-button>
+      </div>
+
+      <!-- Table -->
+      <div class="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-md)] overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-white/5 border-b border-[var(--border)]">
+              <tr>
+                <th class="px-6 py-3 font-medium text-[var(--muted)]">Cédula</th>
+                <th class="px-6 py-3 font-medium text-[var(--muted)]">Nombre</th>
+                <th class="px-6 py-3 font-medium text-[var(--muted)]">Teléfono</th>
+                <th class="px-6 py-3 font-medium text-[var(--muted)]">Jefe</th>
+                <th class="px-6 py-3 font-medium text-[var(--muted)] text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--border)]">
+              <tr *ngFor="let leader of leaders()" class="hover:bg-white/5 transition-colors">
+                <td class="px-6 py-3 text-white font-mono">{{ leader.cedula }}</td>
+                <td class="px-6 py-3 text-white">{{ leader.nombre }}</td>
+                <td class="px-6 py-3 text-[var(--muted)] font-mono">{{ leader.telefono }}</td>
+                <td class="px-6 py-3 text-[var(--muted)]">{{ leader.jefe || '-' }}</td>
+                <td class="px-6 py-3 text-right space-x-2">
+                  <button (click)="editLeader(leader)" class="text-[var(--primary)] hover:underline">Editar</button>
+                  <button (click)="deleteLeader(leader.id)" class="text-red-400 hover:underline">Eliminar</button>
+                </td>
+              </tr>
+              <tr *ngIf="leaders().length === 0">
+                 <td colspan="5" class="px-6 py-8 text-center text-[var(--muted)]">
+                    No hay líderes registrados.
+                 </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Modal -->
+      <div *ngIf="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] w-full max-w-md p-6 space-y-4 shadow-2xl">
+          <h3 class="text-xl font-display font-medium text-white">{{ isEditing ? 'Editar Líder' : 'Nuevo Líder' }}</h3>
+          
+          <div *ngIf="errorMessage" class="p-3 bg-red-500/10 border border-red-500/20 rounded-[var(--radius-sm)] text-red-400 text-xs font-mono">
+             {{ errorMessage }}
+          </div>
+
+          <form [formGroup]="leaderForm" (ngSubmit)="saveLeader()" class="space-y-4">
+            <app-ui-input 
+                label="Cédula" 
+                placeholder="Ej: 1234567890" 
+                formControlName="cedula"
+            ></app-ui-input>
+            
+            <app-ui-input 
+                label="Nombre Completo" 
+                placeholder="Ej: Juan Pérez" 
+                formControlName="nombre"
+            ></app-ui-input>
+
+            <app-ui-input 
+                label="Teléfono" 
+                placeholder="Ej: 3001234567" 
+                formControlName="telefono"
+            ></app-ui-input>
+
+            <app-ui-input 
+                label="Jefe" 
+                placeholder="Ej: Nombre del Jefe" 
+                formControlName="jefe"
+            ></app-ui-input>
+
+            <div class="flex justify-end space-x-3 mt-6">
+              <app-ui-button variant="outline" (onClick)="closeModal()" type="button">CANCELAR</app-ui-button>
+              <app-ui-button variant="primary" type="submit" [loading]="isSaving">GUARDAR</app-ui-button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  `
+})
+export class LeadersComponent {
+  private leaderService = inject(LeaderService);
+  private fb = inject(FormBuilder);
+
+  leaders = signal<Leader[]>([]);
+  isModalOpen = false;
+  isEditing = false;
+  isSaving = false;
+  editingId: string | null = null;
+  errorMessage: string | null = null;
+
+  leaderForm: FormGroup = this.fb.group({
+    cedula: ['', [Validators.required]],
+    nombre: ['', [Validators.required]],
+    telefono: ['', [Validators.required]],
+    jefe: ['']
+  });
+
+  constructor() {
+    this.loadLeaders();
+  }
+
+  loadLeaders() {
+    this.leaderService.findAll().subscribe({
+      next: (data) => this.leaders.set(data),
+      error: (err) => console.error('Error loading leaders', err)
+    });
+  }
+
+  openModal() {
+    this.isEditing = false;
+    this.editingId = null;
+    this.leaderForm.reset();
+    this.errorMessage = null;
+    this.isModalOpen = true;
+  }
+
+  closeModal() {
+    this.isModalOpen = false;
+    this.errorMessage = null;
+  }
+
+  editLeader(leader: Leader) {
+    this.isEditing = true;
+    this.editingId = leader.id;
+    this.leaderForm.patchValue({
+      cedula: leader.cedula,
+      nombre: leader.nombre,
+      telefono: leader.telefono,
+      jefe: leader.jefe
+    });
+    this.errorMessage = null;
+    this.isModalOpen = true;
+  }
+
+  saveLeader() {
+    if (this.leaderForm.invalid) return;
+
+    this.isSaving = true;
+    const formData = this.leaderForm.value;
+
+    const request = this.isEditing && this.editingId
+      ? this.leaderService.update(this.editingId, formData)
+      : this.leaderService.create(formData);
+
+    request.subscribe({
+      next: () => {
+        this.isSaving = false;
+        this.closeModal();
+        this.loadLeaders();
+      },
+      error: (err) => {
+        console.error('Error saving leader', err);
+        this.errorMessage = err.message || 'Error al procesar la solicitud';
+        this.isSaving = false;
+      }
+    });
+  }
+
+  deleteLeader(id: string) {
+    if (!confirm('¿Estás seguro de eliminar este líder?')) return;
+
+    this.leaderService.remove(id).subscribe({
+      next: () => this.loadLeaders(),
+      error: (err) => {
+        alert(err.message || 'Error al eliminar líder');
+        console.error('Error deleting leader', err);
+      }
+    });
+  }
+}

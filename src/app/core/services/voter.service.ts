@@ -2,12 +2,17 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, delay } from 'rxjs';
 
-export interface Leader {
+import { Leader } from '../models/leader.model';
+
+// export interface Leader { ... } - Removed duplicate
+
+export interface VoterDetail {
     id: string;
-    nombre: string;
-    telefono: string;
-    created_at?: string;
-    updated_at?: string;
+    department: string;
+    municipality: string;
+    polling_station: string;
+    table: string;
+    address: string;
 }
 
 export interface Voter {
@@ -16,13 +21,14 @@ export interface Voter {
     nombre: string;
     telefono: string;
     leader_id: string;
-    leader?: Leader; // Verification status and leader details
+    leader?: Leader;
     verification_status?: 'PENDING' | 'ERROR' | 'FAILED' | 'SUCCESS';
     registraduria_data?: any;
     created_at?: string;
     updated_at?: string;
-    mesa?: number; // Optional now
-    digitador?: string; // Keep for backward compat if needed, but prefer created_by
+    mesa?: number;
+    detail?: VoterDetail; // New detail property
+    digitador?: string;
     created_by?: {
         id: string;
         username: string;

@@ -1,7 +1,8 @@
 import { Component, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { VoterService, Voter, Leader } from '../../../core/services/voter.service';
+import { VoterService, Voter } from '../../../core/services/voter.service';
+import { Leader } from '../../../core/models/leader.model';
 import { UiCardComponent } from '../../../shared/components/ui-card/ui-card.component';
 import { UiInputComponent } from '../../../shared/components/ui-input/ui-input.component';
 import { UiSelectComponent, SelectOption } from '../../../shared/components/ui-select/ui-select.component';
@@ -164,7 +165,7 @@ export class RegisterVoterComponent implements OnInit {
         },
         error: (err) => {
           this.loading = false;
-          this.errorMessage = 'Error al registrar votante. Verifique la conexión.';
+          this.errorMessage = err.message || 'Error al registrar votante. Verifique la conexión.';
           console.error(err);
         }
       });

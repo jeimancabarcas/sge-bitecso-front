@@ -89,12 +89,13 @@ export class LoginComponent {
             if (res.user.role === 'admin') {
               this.router.navigate(['/admin/dashboard']);
             } else {
-              this.router.navigate(['/digitador/register']);
+              this.router.navigate(['/']); // Redirect digitador to base path
             }
           },
           error: (err) => {
+            console.error('Login error full details:', err);
             this.loading = false;
-            this.error = 'ACCESO DENEGADO: Credenciales Inválidas';
+            this.error = `ACCESO DENEGADO: ${err.message}`;
           }
         });
       }
