@@ -19,9 +19,6 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
             <app-ui-button variant="outline" (onClick)="loadRecords()">
                 ACTUALIZAR
             </app-ui-button>
-            <app-ui-button variant="primary" (onClick)="generateReport()">
-                GENERAR REPORTE
-            </app-ui-button>
         </div>
       </div>
 
@@ -56,8 +53,10 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
                         <td class="p-3 text-[var(--muted)]">{{ voter.telefono }}</td>
                         <td class="p-3 text-[var(--primary)]">{{ voter.leader?.nombre || 'N/A' }}</td>
                         <td class="p-3">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide"
-                                [ngClass]="getStatusClass(voter.verification_status)">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide cursor-help"
+                                [ngClass]="getStatusClass(voter.verification_status)"
+                                (mouseenter)="showTooltip($event, voter)"
+                                (mouseleave)="hideTooltip()">
                                 {{ voter.verification_status || 'PENDING' }}
                             </span>
                         </td>
@@ -112,6 +111,25 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
             </div>
         </div>
       </app-ui-card>
+
+      <!-- Fixed Tooltip Portal -->
+      <div *ngIf="hoveredVoter" 
+           class="fixed z-[100] w-64 bg-[#0f172a] border border-[var(--primary)]/30 text-xs text-white p-3 rounded-[var(--radius-sm)] shadow-[0_0_20px_rgba(0,0,0,0.8)] pointer-events-none transition-opacity duration-150 animate-fade-in"
+           [style.top.px]="tooltipPosition.top"
+           [style.left.px]="tooltipPosition.left">
+          
+          <div class="font-bold mb-2 text-[var(--secondary)] uppercase tracking-wide border-b border-white/10 pb-1">
+              DETALLE DE VERIFICACIÓN
+          </div>
+          <div class="text-[11px] leading-relaxed italic text-white/90">
+              {{ (hoveredVoter.verification_logs && hoveredVoter.verification_logs.length > 0) 
+                  ? hoveredVoter.verification_logs[0].message 
+                  : 'Sin detalles disponibles en el sistema.' }}
+          </div>
+          <div *ngIf="hoveredVoter.verification_logs && hoveredVoter.verification_logs.length > 0" class="mt-2 text-[9px] text-[var(--muted)] font-mono text-right">
+              {{ hoveredVoter.verification_logs[0].attempted_at | date:'short' }}
+          </div>
+      </div>
     </div>
   `
 })
@@ -124,6 +142,10 @@ export class MyRecordsComponent implements OnInit {
 
     currentPage = signal(1);
     limit = 5; // Default to 5 as requested
+
+    // Tooltip State
+    hoveredVoter: Voter | null = null;
+    tooltipPosition = { top: 0, left: 0 };
 
     ngOnInit() {
         this.loadRecords();
@@ -166,22 +188,22 @@ export class MyRecordsComponent implements OnInit {
         }
     }
 
-    generateReport() {
-        this.voterService.getReport().subscribe({
-            next: (blob) => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `reporte-general-${new Date().getTime()}.xlsx`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            },
-            error: (err) => {
-                console.error('Failed to download report', err);
-                this.error.set('Error al generar el reporte.');
-            }
-        });
+    showTooltip(event: MouseEvent, voter: Voter) {
+        const target = event.currentTarget as HTMLElement;
+        const rect = target.getBoundingClientRect();
+
+        const tooltipHeight = 100;
+        const showBelow = rect.top < 150;
+
+        this.hoveredVoter = voter;
+
+        this.tooltipPosition = {
+            left: rect.left + (rect.width / 2) - 128, // Center
+            top: showBelow ? (rect.bottom + 10) : (rect.top - tooltipHeight - 10)
+        };
+    }
+
+    hideTooltip() {
+        this.hoveredVoter = null;
     }
 }

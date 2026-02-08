@@ -2,12 +2,14 @@ import { Component, inject, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { VoterService } from '../../core/services/voter.service';
 import { User } from '../../core/models/user.model';
+import { UiButtonComponent } from '../../shared/components/ui-button/ui-button.component';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, UiButtonComponent],
   template: `
     <div class="flex h-screen overflow-hidden bg-[var(--background)] texture-dots">
       
@@ -126,6 +128,11 @@ import { User } from '../../core/models/user.model';
                 ESTADO DEL SISTEMA: <span class="text-emerald-500">EN LÍNEA</span> // {{ currentTime | date:'mediumTime' }}
               </div>
           </div>
+          <div class="flex items-center space-x-3">
+              <app-ui-button variant="primary" size="sm" (onClick)="generateReport()" [loading]="isReporting">
+                  GENERAR REPORTE
+              </app-ui-button>
+          </div>
         </header>
 
         <div class="p-4 sm:p-6">
@@ -137,9 +144,11 @@ import { User } from '../../core/models/user.model';
 })
 export class MainLayoutComponent {
   authService = inject(AuthService);
+  voterService = inject(VoterService);
   user: Signal<User | null> = this.authService.currentUser;
   currentTime = new Date();
   isSidebarOpen = false;
+  isReporting = false;
 
   isAdmin() {
     return this.authService.isAdmin();
@@ -160,5 +169,27 @@ export class MainLayoutComponent {
 
   closeSidebarOnMobile() {
     this.isSidebarOpen = false;
+  }
+
+  generateReport() {
+    this.isReporting = true;
+    this.voterService.getReport().subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reporte-sge-${new Date().getTime()}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        this.isReporting = false;
+      },
+      error: (err) => {
+        console.error('Failed to download report', err);
+        this.isReporting = false;
+        alert('Error al generar el reporte global.');
+      }
+    });
   }
 }

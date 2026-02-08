@@ -7,6 +7,12 @@ import { API_CONFIG } from '../config/api.config';
 
 // export interface Leader { ... } - Removed duplicate
 
+export interface VerificationLog {
+    status: string;
+    message: string;
+    attempted_at: string;
+}
+
 export interface VoterDetail {
     id: string;
     department: string;
@@ -35,6 +41,7 @@ export interface Voter {
         username: string;
         role: string;
     };
+    verification_logs?: VerificationLog[];
     fechaRegistro?: Date;
 }
 
