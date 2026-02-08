@@ -1,0 +1,26 @@
+
+> sge-front@0.0.0 build
+> ng build
+
+[33m❯[39m Building...
+[32m✔[39m Building...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m                   [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-EYAZIPDJ.js[39m  [2m | [22m[2m-[22m                       [2m | [22m[36m225.13 kB[39m[2m | [22m               [36m60.93 kB[39m
+[32mmain-O3WEVNR5.js[39m   [2m | [22m[2mmain[22m                    [2m | [22m[36m135.70 kB[39m[2m | [22m               [36m36.81 kB[39m
+[32mstyles-KRUXCRCE.css[39m[2m | [22m[2mstyles[22m                  [2m | [22m [36m36.68 kB[39m[2m | [22m                [36m5.84 kB[39m
+[32mchunk-43ZND5WL.js[39m  [2m | [22m[2m-[22m                       [2m | [22m  [36m2.67 kB[39m[2m | [22m                [36m1.09 kB[39m
+[32mchunk-2WAYYYMD.js[39m  [2m | [22m[2m-[22m                       [2m | [22m  [36m1.35 kB[39m[2m | [22m              [36m634 bytes[39m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m           [2m | [22m[1m401.53 kB[22m[2m | [22m              [1m105.31 kB[22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m                   [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-3UIB6BRX.js[39m  [2m | [22m[2mdashboard-component[22m     [2m | [22m [36m14.72 kB[39m[2m | [22m                [36m3.99 kB[39m
+[32mchunk-W2445JY2.js[39m  [2m | [22m[2mregister-voter-component[22m[2m | [22m [36m11.18 kB[39m[2m | [22m                [36m3.48 kB[39m
+[32mchunk-ZU7CTFZT.js[39m  [2m | [22m[2m-[22m                       [2m | [22m  [36m8.23 kB[39m[2m | [22m                [36m2.73 kB[39m
+[32mchunk-LH3IINVV.js[39m  [2m | [22m[2musers-component[22m         [2m | [22m  [36m7.82 kB[39m[2m | [22m                [36m2.52 kB[39m
+[32mchunk-TVO2JUAJ.js[39m  [2m | [22m[2mleaders-component[22m       [2m | [22m  [36m7.24 kB[39m[2m | [22m                [36m2.33 kB[39m
+
+Application bundle generation complete. [2.511 seconds] - 2026-02-08T00:58:56.973Z
+
+Output location: C:\Users\Dell\OneDrive\Escritorio\Bitecso\sge-bitecso-front\dist\sge-bitecso-front
+
