@@ -19,7 +19,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            cd ~/nombre-de-tu-repo-angular
+            cd ~/sge-bitecso-front
             git pull origin main
             npm install
             # Compilamos en producción
@@ -27,6 +27,6 @@ jobs:
             # Limpiamos la carpeta de Nginx y movemos el nuevo build
             sudo rm -rf /var/www/rjimproves/front/*
             # Ajusta la ruta 'dist/nombre-proyecto' según tu angular.json
-            sudo cp -r dist/tu-proyecto-angular/* /var/www/rjimproves/front/
+            sudo cp -r dist/sge-bitecso-front/* /var/www/rjimproves/front/
             # Reiniciamos Nginx por seguridad
             sudo systemctl restart nginx
