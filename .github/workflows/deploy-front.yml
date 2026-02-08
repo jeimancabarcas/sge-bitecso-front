@@ -1,9 +1,9 @@
-name: Deploy Frontend Bitecso
+name: Deploy Frontend RJ Improves
 
 on:
   push:
     branches:
-      - main
+      - main # Asegúrate de que este sea el nombre de tu rama principal
 
 jobs:
   deploy:
@@ -19,14 +19,28 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
+            # 1. Entrar al directorio del código
             cd ~/sge-bitecso-front
+            
+            # 2. Actualizar el repositorio
             git pull origin main
+            
+            # 3. Instalar dependencias y generar el build
+            # Usamos -- --configuration para pasar el argumento correctamente a través de npm
             npm install
-            # Compilamos en producción
-            npm run build --configuration=production
-            # Limpiamos la carpeta de Nginx y movemos el nuevo build
+            npm run build -- --configuration=production
+            
+            # 4. Limpiar la carpeta de producción de Nginx
+            # Según tu configuración, Nginx busca en /var/www/rjimproves/front
             sudo rm -rf /var/www/rjimproves/front/*
-            # Ajusta la ruta 'dist/nombre-proyecto' según tu angular.json
-            sudo cp -r dist/sge-bitecso-front/* /var/www/rjimproves/front/
-            # Reiniciamos Nginx por seguridad
+            
+            # 5. Mover los nuevos archivos desde la carpeta dist detectada en tus logs
+            sudo cp -r ~/sge-bitecso-front/dist/sge-bitecso-front/* /var/www/rjimproves/front/
+            
+            # 6. Corregir permisos (Vital para evitar el error 403 Forbidden)
+            # Asignamos el dueño al usuario de Nginx y damos permisos de lectura
+            sudo chown -R www-data:www-data /var/www/rjimproves/front
+            sudo chmod -R 755 /var/www/rjimproves/front
+            
+            # 7. Reiniciar Nginx para asegurar que tome los cambios
             sudo systemctl restart nginx
