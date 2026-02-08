@@ -106,7 +106,7 @@ import { ChiefService, ChiefStats } from '../../../core/services/chief.service';
                 </div>
               </div>
             </div>
-          </app-ui-card>
+          </app-ui-card> 
 
           <!-- Chief Performance Chart (Bar) -->
           <app-ui-card title="RENDIMIENTO POR JEFES">
