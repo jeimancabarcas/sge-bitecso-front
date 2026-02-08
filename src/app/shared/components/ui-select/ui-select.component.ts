@@ -152,15 +152,23 @@ export class UiSelectComponent implements ControlValueAccessor {
         }
     }
 
-    // Close on scroll to avoid detached dropdowns
+    private lastWidth = window.innerWidth;
+
+    // Close on scroll to avoid detached dropdowns, but avoid it on mobile if it's just keyboard
     @HostListener('window:scroll')
     onScroll() {
-        if (this.isOpen) this.isOpen = false;
+        if (this.isOpen && window.innerWidth > 768) { // Only force close on desktop scroll
+            this.isOpen = false;
+        }
     }
 
     @HostListener('window:resize')
     onResize() {
-        if (this.isOpen) this.isOpen = false;
+        const currentWidth = window.innerWidth;
+        if (this.isOpen && currentWidth !== this.lastWidth) {
+            this.isOpen = false;
+            this.lastWidth = currentWidth;
+        }
     }
 
     toggleDropdown() {
