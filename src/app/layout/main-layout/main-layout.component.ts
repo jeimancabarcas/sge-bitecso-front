@@ -62,10 +62,25 @@ import { User } from '../../core/models/user.model';
                Gestión de Digitadores
             </a>
 
+            <a routerLink="/admin/chiefs" 
+               (click)="closeSidebarOnMobile()"
+               routerLinkActive="bg-white/5 text-white border-white/10" 
+               class="flex items-center px-3 py-2 text-sm font-medium text-[var(--muted)] rounded-[var(--radius-sm)] border border-transparent hover:bg-white/5 hover:text-white transition-all group">
+               Gestión de Jefes
+            </a>
+
           </ng-container>
 
           <!-- Digitador Links (Digitadores Only) -->
           <ng-container *ngIf="!isAdmin()">
+              <a routerLink="/digitador/leaders" 
+                 (click)="closeSidebarOnMobile()"
+                 routerLinkActive="bg-white/5 text-white border-white/10" 
+                 class="flex items-center px-3 py-2 text-sm font-medium text-[var(--muted)] rounded-[var(--radius-sm)] border border-transparent hover:bg-white/5 hover:text-white transition-all group">
+                 <span class="w-2 h-2 rounded-full bg-[var(--primary)] mr-3 opacity-50 group-hover:opacity-100"></span>
+                 Gestión de Líderes
+              </a>
+
               <a routerLink="/digitador/register" 
                  (click)="closeSidebarOnMobile()"
                  routerLinkActive="bg-white/5 text-white border-white/10" 

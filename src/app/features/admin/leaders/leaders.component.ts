@@ -2,14 +2,16 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LeaderService } from '../../../core/services/leader.service';
+import { ChiefService } from '../../../core/services/chief.service';
 import { Leader } from '../../../core/models/leader.model';
 import { UiButtonComponent } from '../../../shared/components/ui-button/ui-button.component';
 import { UiInputComponent } from '../../../shared/components/ui-input/ui-input.component';
+import { UiSelectComponent, SelectOption } from '../../../shared/components/ui-select/ui-select.component';
 
 @Component({
   selector: 'app-leaders',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, UiButtonComponent, UiInputComponent],
+  imports: [CommonModule, ReactiveFormsModule, UiButtonComponent, UiInputComponent, UiSelectComponent],
   template: `
     <div class="space-y-6">
       <div class="flex items-center justify-between">
@@ -41,7 +43,7 @@ import { UiInputComponent } from '../../../shared/components/ui-input/ui-input.c
                 <td class="px-6 py-3 text-white font-mono">{{ leader.cedula }}</td>
                 <td class="px-6 py-3 text-white">{{ leader.nombre }}</td>
                 <td class="px-6 py-3 text-[var(--muted)] font-mono">{{ leader.telefono }}</td>
-                <td class="px-6 py-3 text-[var(--muted)]">{{ leader.jefe || '-' }}</td>
+                <td class="px-6 py-3 text-[var(--muted)]">{{ leader.chief?.nombre || '-' }}</td>
                 <td class="px-6 py-3 text-right space-x-2">
                   <button (click)="editLeader(leader)" class="text-[var(--primary)] hover:underline">Editar</button>
                   <button (click)="deleteLeader(leader.id)" class="text-red-400 hover:underline">Eliminar</button>
@@ -85,11 +87,13 @@ import { UiInputComponent } from '../../../shared/components/ui-input/ui-input.c
                 formControlName="telefono"
             ></app-ui-input>
 
-            <app-ui-input 
-                label="Jefe" 
-                placeholder="Ej: Nombre del Jefe" 
-                formControlName="jefe"
-            ></app-ui-input>
+            <app-ui-select 
+                label="Jefe Asignado" 
+                placeholder="Seleccione un Jefe" 
+                formControlName="chief_id"
+                [options]="chiefOptions()"
+                [required]="true"
+            ></app-ui-select>
 
             <div class="flex justify-end space-x-3 mt-6">
               <app-ui-button variant="outline" (onClick)="closeModal()" type="button">CANCELAR</app-ui-button>
@@ -103,9 +107,11 @@ import { UiInputComponent } from '../../../shared/components/ui-input/ui-input.c
 })
 export class LeadersComponent {
   private leaderService = inject(LeaderService);
+  private chiefService = inject(ChiefService);
   private fb = inject(FormBuilder);
 
   leaders = signal<Leader[]>([]);
+  chiefOptions = signal<SelectOption[]>([]);
   isModalOpen = false;
   isEditing = false;
   isSaving = false;
@@ -117,11 +123,22 @@ export class LeadersComponent {
     cedula: ['', [Validators.required]],
     nombre: ['', [Validators.required]],
     telefono: ['', [Validators.required]],
-    jefe: ['']
+    chief_id: ['', [Validators.required]]
   });
 
   constructor() {
     this.loadLeaders();
+    this.loadChiefs();
+  }
+
+  loadChiefs() {
+    this.chiefService.findAll().subscribe({
+      next: (data) => {
+        const options = data.map(c => ({ label: c.nombre, value: c.id }));
+        this.chiefOptions.set(options);
+      },
+      error: (err) => console.error('Error loading chiefs', err)
+    });
   }
 
   loadLeaders() {
@@ -151,7 +168,7 @@ export class LeadersComponent {
       cedula: leader.cedula,
       nombre: leader.nombre,
       telefono: leader.telefono,
-      jefe: leader.jefe
+      chief_id: leader.chief_id
     });
     this.errorMessage = null;
     this.isModalOpen = true;

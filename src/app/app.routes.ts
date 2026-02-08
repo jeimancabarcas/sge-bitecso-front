@@ -38,6 +38,10 @@ export const routes: Routes = [
                         path: 'leaders',
                         loadComponent: () => import('./features/admin/leaders/leaders.component').then(m => m.LeadersComponent)
                     },
+                    {
+                        path: 'chiefs',
+                        loadComponent: () => import('./features/admin/chiefs/chiefs.component').then(m => m.ChiefsComponent)
+                    },
                     { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
                 ]
             },
@@ -49,6 +53,10 @@ export const routes: Routes = [
                     {
                         path: 'register',
                         loadComponent: () => import('./features/digitador/register-voter/register-voter.component').then(m => m.RegisterVoterComponent)
+                    },
+                    {
+                        path: 'leaders',
+                        loadComponent: () => import('./features/admin/leaders/leaders.component').then(m => m.LeadersComponent)
                     },
                     { path: '', redirectTo: 'register', pathMatch: 'full' }
                 ]
