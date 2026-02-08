@@ -2,13 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Leader, CreateLeaderDto, UpdateLeaderDto } from '../models/leader.model';
+import { API_CONFIG } from '../config/api.config';
 
 @Injectable({
     providedIn: 'root'
 })
 export class LeaderService {
     private http = inject(HttpClient);
-    private apiUrl = 'http://localhost:3000/leaders'; // Assuming base URL is localhost:3000
+    private apiUrl = `${API_CONFIG.baseUrl}/leaders`; // Using central config
 
     findAll(): Observable<Leader[]> {
         return this.http.get<Leader[]>(this.apiUrl);

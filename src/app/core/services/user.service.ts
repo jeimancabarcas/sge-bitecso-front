@@ -2,13 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { User, CreateUserDto, UpdateUserDto } from '../models/user.model';
+import { API_CONFIG } from '../config/api.config';
 
 @Injectable({
     providedIn: 'root'
 })
 export class UserService {
     private http = inject(HttpClient);
-    private apiUrl = 'http://localhost:3000/users';
+    private apiUrl = `${API_CONFIG.baseUrl}/users`;
 
     findAll(): Observable<User[]> {
         return this.http.get<User[]>(`${this.apiUrl}/digitators`);

@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of, delay } from 'rxjs';
 
 import { Leader } from '../models/leader.model';
+import { API_CONFIG } from '../config/api.config';
 
 // export interface Leader { ... } - Removed duplicate
 
@@ -84,7 +85,7 @@ export interface LeaderStats {
 })
 export class VoterService {
     private http = inject(HttpClient);
-    private apiUrl = 'http://localhost:3000'; // Base API URL
+    private apiUrl = API_CONFIG.baseUrl; // Base API URL from config
 
     getStats(): Observable<DashboardStats> {
         // Keeping mock for stats as endpoint wasn't provided yet

@@ -5,6 +5,7 @@ import { map, tap } from 'rxjs/operators';
 import { AuthResponse, User } from '../models/user.model';
 import { Observable } from 'rxjs';
 import { jwtDecode } from 'jwt-decode';
+import { API_CONFIG } from '../config/api.config';
 
 interface JwtPayload {
     username: string;
@@ -21,7 +22,7 @@ export class AuthService {
     private http = inject(HttpClient);
     private router = inject(Router);
 
-    private apiUrl = 'http://localhost:3000'; // Base URL per user request
+    private apiUrl = API_CONFIG.baseUrl; // Base URL from config
     private readonly TOKEN_KEY = 'auth_token';
     private readonly USER_KEY = 'auth_user';
 
