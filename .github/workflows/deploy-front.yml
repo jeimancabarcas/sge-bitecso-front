@@ -23,6 +23,7 @@ jobs:
             cd ~/sge-bitecso-front
             
             # 2. Actualizar el repositorio con los últimos cambios
+            git reset --hard origin/main
             git pull origin main
             
             # 3. Instalar dependencias y generar el build de producción
