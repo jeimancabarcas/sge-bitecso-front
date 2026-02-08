@@ -1,0 +1,32 @@
+name: Deploy Frontend Bitecso
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Executing remote ssh commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/nombre-de-tu-repo-angular
+            git pull origin main
+            npm install
+            # Compilamos en producción
+            npm run build --configuration=production
+            # Limpiamos la carpeta de Nginx y movemos el nuevo build
+            sudo rm -rf /var/www/rjimproves/front/*
+            # Ajusta la ruta 'dist/nombre-proyecto' según tu angular.json
+            sudo cp -r dist/tu-proyecto-angular/* /var/www/rjimproves/front/
+            # Reiniciamos Nginx por seguridad
+            sudo systemctl restart nginx
