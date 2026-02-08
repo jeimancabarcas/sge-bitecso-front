@@ -137,14 +137,20 @@ export class LeadersComponent {
         const options = data.map(c => ({ label: c.nombre, value: c.id }));
         this.chiefOptions.set(options);
       },
-      error: (err) => console.error('Error loading chiefs', err)
+      error: (err) => {
+        console.error('Error loading chiefs', err);
+        this.topErrorMessage = 'No se pudieron cargar los jefes. Verifique su conexión o permisos.';
+      }
     });
   }
 
   loadLeaders() {
     this.leaderService.findAll().subscribe({
       next: (data) => this.leaders.set(data),
-      error: (err) => console.error('Error loading leaders', err)
+      error: (err) => {
+        console.error('Error loading leaders', err);
+        this.topErrorMessage = 'No se pudieron cargar los líderes.';
+      }
     });
   }
 
@@ -168,7 +174,7 @@ export class LeadersComponent {
       cedula: leader.cedula,
       nombre: leader.nombre,
       telefono: leader.telefono,
-      chief_id: leader.chief_id
+      chief_id: leader.chief_id || leader.chief?.id
     });
     this.errorMessage = null;
     this.isModalOpen = true;

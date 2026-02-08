@@ -97,14 +97,15 @@ export class UiSelectComponent implements ControlValueAccessor {
     @Input() label: string = '';
     @Input() placeholder: string = 'Seleccione una opción';
 
-    // Inputs must be signals or handled with backing fields to react effectively
-    private _options: SelectOption[] = [];
+    // Options signal for reactivity in computed
+    private optionsSignal = signal<SelectOption[]>([]);
+
     @Input()
     set options(v: SelectOption[]) {
-        this._options = v;
+        this.optionsSignal.set(v || []);
         this.filterQuery.set(''); // Reset filter on new options
     }
-    get options() { return this._options; }
+    get options() { return this.optionsSignal(); }
 
     @Input() required: boolean = false;
     @Input() error: string = '';
@@ -123,13 +124,14 @@ export class UiSelectComponent implements ControlValueAccessor {
     // Computed filtered options
     filteredOptions = computed(() => {
         const query = this.filterQuery().toLowerCase();
-        if (!query) return this.options;
-        return this.options.filter(opt => opt.label.toLowerCase().includes(query));
+        const options = this.optionsSignal();
+        if (!query) return options;
+        return options.filter(opt => opt.label.toLowerCase().includes(query));
     });
 
     // Helper to get selected label
     get selectedLabel(): string {
-        const selected = this.options.find(opt => opt.value === this.value);
+        const selected = this.optionsSignal().find(opt => opt.value === this.value);
         return selected ? selected.label : '';
     }
 
