@@ -3,7 +3,7 @@ name: Deploy Frontend RJ Improves
 on:
   push:
     branches:
-      - main # Asegúrate de que este sea el nombre de tu rama principal
+      - main # Verifica si tu rama es 'main' o 'master'
 
 jobs:
   deploy:
@@ -12,35 +12,38 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Executing remote ssh commands
+      - name: Executing remote ssh commands via SSH
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            # 1. Entrar al directorio del código
+            # 1. Entrar al directorio del código en el VPS
             cd ~/sge-bitecso-front
             
-            # 2. Actualizar el repositorio
+            # 2. Actualizar el repositorio con los últimos cambios
             git pull origin main
             
-            # 3. Instalar dependencias y generar el build
-            # Usamos -- --configuration para pasar el argumento correctamente a través de npm
+            # 3. Instalar dependencias y generar el build de producción
             npm install
             npm run build -- --configuration=production
             
-            # 4. Limpiar la carpeta de producción de Nginx
-            # Según tu configuración, Nginx busca en /var/www/rjimproves/front
+            # 4. Limpiar la carpeta de destino de Nginx
             sudo rm -rf /var/www/rjimproves/front/*
             
-            # 5. Mover los nuevos archivos desde la carpeta dist detectada en tus logs
-            sudo cp -r ~/sge-bitecso-front/dist/sge-bitecso-front/* /var/www/rjimproves/front/
+            # 5. Mover el contenido de 'browser' a la raíz (Solución al 403)
+            # Angular 17+ guarda el index.html dentro de /browser/
+            sudo cp -r ~/sge-bitecso-front/dist/sge-bitecso-front/browser/* /var/www/rjimproves/front/
             
-            # 6. Corregir permisos (Vital para evitar el error 403 Forbidden)
-            # Asignamos el dueño al usuario de Nginx y damos permisos de lectura
+            # 6. Corregir permisos de archivos y carpetas
+            # Asignamos al usuario de Nginx (www-data) y damos permisos de lectura
             sudo chown -R www-data:www-data /var/www/rjimproves/front
             sudo chmod -R 755 /var/www/rjimproves/front
             
-            # 7. Reiniciar Nginx para asegurar que tome los cambios
+            # 7. Asegurar permisos de ejecución en las carpetas superiores
+            sudo chmod +x /var/www
+            sudo chmod +x /var/www/rjimproves
+            
+            # 8. Reiniciar Nginx para aplicar cambios
             sudo systemctl restart nginx
