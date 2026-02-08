@@ -99,7 +99,7 @@ export class RegisterVoterComponent implements OnInit {
   leaderOptions = signal<SelectOption[]>([]);
 
   voterForm = this.fb.group({
-    cedula: ['', [Validators.required, Validators.minLength(6)]],
+    cedula: ['', [Validators.required, Validators.pattern('^[0-9]*$'), Validators.minLength(6)]],
     nombre: ['', [Validators.required, Validators.minLength(3)]],
     telefono: ['', [Validators.required, Validators.pattern('^[0-9]*$')]],
     leader_id: ['', [Validators.required]]

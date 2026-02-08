@@ -120,7 +120,7 @@ export class LeadersComponent {
   topErrorMessage: string | null = null;
 
   leaderForm: FormGroup = this.fb.group({
-    cedula: ['', [Validators.required]],
+    cedula: ['', [Validators.required, Validators.pattern('^[0-9]*$')]],
     nombre: ['', [Validators.required]],
     telefono: ['', [Validators.required]],
     chief_id: ['', [Validators.required]]

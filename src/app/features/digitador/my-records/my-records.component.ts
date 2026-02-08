@@ -15,9 +15,14 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
            <h2 class="text-2xl font-display font-medium text-white tracking-tight">MIS REGISTROS</h2>
            <p class="text-[var(--muted)] text-sm">Historial de votantes registrados y estado de verificación.</p>
         </div>
-        <app-ui-button variant="outline" (onClick)="loadRecords()">
-            ACTUALIZAR
-        </app-ui-button>
+        <div class="flex space-x-2">
+            <app-ui-button variant="outline" (onClick)="loadRecords()">
+                ACTUALIZAR
+            </app-ui-button>
+            <app-ui-button variant="primary" (onClick)="generateReport()">
+                GENERAR REPORTE
+            </app-ui-button>
+        </div>
       </div>
 
       <app-ui-card>
@@ -159,5 +164,24 @@ export class MyRecordsComponent implements OnInit {
             case 'ERROR': return 'bg-amber-500/10 text-amber-500 border border-amber-500/20';
             default: return 'bg-blue-500/10 text-blue-500 border border-blue-500/20';
         }
+    }
+
+    generateReport() {
+        this.voterService.getReport().subscribe({
+            next: (blob) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `reporte-general-${new Date().getTime()}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            },
+            error: (err) => {
+                console.error('Failed to download report', err);
+                this.error.set('Error al generar el reporte.');
+            }
+        });
     }
 }
