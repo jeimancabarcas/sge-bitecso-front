@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { VoterService, VoterResponse, Voter } from '../../../core/services/voter.service';
 import { UiCardComponent } from '../../../shared/components/ui-card/ui-card.component';
 import { UiButtonComponent } from '../../../shared/components/ui-button/ui-button.component';
@@ -7,7 +8,7 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
 @Component({
     selector: 'app-my-records',
     standalone: true,
-    imports: [CommonModule, UiCardComponent, UiButtonComponent],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, UiCardComponent, UiButtonComponent],
     template: `
     <div class="space-y-6">
       <div class="flex items-center justify-between">
@@ -16,6 +17,9 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
            <p class="text-[var(--muted)] text-sm">Historial de votantes registrados y estado de verificación.</p>
         </div>
         <div class="flex space-x-2">
+            <app-ui-button variant="primary" (onClick)="isReportModalOpen = true">
+                REPORTE POR LÍDER
+            </app-ui-button>
             <app-ui-button variant="outline" (onClick)="loadRecords()">
                 ACTUALIZAR
             </app-ui-button>
@@ -130,6 +134,44 @@ import { UiButtonComponent } from '../../../shared/components/ui-button/ui-butto
               {{ hoveredVoter.verification_logs[0].attempted_at | date:'short' }}
           </div>
       </div>
+
+      <!-- Report Selection Modal -->
+      <div *ngIf="isReportModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] w-full max-w-md p-6 space-y-6 shadow-2xl animate-fade-in relative">
+          <button (click)="isReportModalOpen = false" class="absolute top-4 right-4 text-[var(--muted)] hover:text-white transition-colors">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          <div>
+            <h3 class="text-xl font-display font-medium text-white mb-1">GENERAR REPORTE</h3>
+            <p class="text-[var(--muted)] text-sm font-mono">Seleccione el líder para filtrar el reporte electoral.</p>
+          </div>
+
+          <div class="space-y-4">
+             <div class="mb-4">
+                <label class="block text-xs font-medium text-[var(--muted)] uppercase tracking-wider mb-1.5 ml-0.5">SELECCIONAR LÍDER</label>
+                <select 
+                    [(ngModel)]="selectedLeaderId"
+                    class="w-full bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-sm)] px-3 py-2 text-white outline-none focus:border-[var(--primary)]"
+                >
+                    <option [value]="null">TODOS LOS LÍDERES</option>
+                    <option *ngFor="let leader of leaderOptions" [value]="leader.id">{{ leader.nombre }}</option>
+                </select>
+             </div>
+
+            <div class="pt-4 flex flex-col gap-3">
+              <app-ui-button variant="primary" [fullWidth]="true" (onClick)="downloadReportByLeader()" [loading]="generatingReport">
+                DESCARGAR REPORTE EXCEL
+              </app-ui-button>
+              <app-ui-button variant="outline" [fullWidth]="true" (onClick)="isReportModalOpen = false">
+                CANCELAR
+              </app-ui-button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   `
 })
@@ -140,6 +182,12 @@ export class MyRecordsComponent implements OnInit {
     loading = signal(false);
     error = signal('');
 
+    // Report Logic
+    isReportModalOpen = false;
+    generatingReport = false;
+    selectedLeaderId: string | null = null;
+    leaderOptions: any[] = [];
+
     currentPage = signal(1);
     limit = 5; // Default to 5 as requested
 
@@ -149,6 +197,14 @@ export class MyRecordsComponent implements OnInit {
 
     ngOnInit() {
         this.loadRecords();
+        this.loadLeaders();
+    }
+
+    loadLeaders() {
+        this.voterService.getLeaders().subscribe({
+            next: (data) => this.leaderOptions = data,
+            error: (err) => console.error('Error loading leaders for report', err)
+        });
     }
 
     loadRecords() {
@@ -164,6 +220,34 @@ export class MyRecordsComponent implements OnInit {
                 console.error(err);
                 this.error.set('Error al cargar los registros. Intente nuevamente.');
                 this.loading.set(false);
+            }
+        });
+    }
+
+    downloadReportByLeader() {
+        this.generatingReport = true;
+        this.voterService.getReportByLeader(this.selectedLeaderId || undefined).subscribe({
+            next: (blob: Blob) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+
+                let leaderName = 'TODOS';
+                if (this.selectedLeaderId) {
+                    const selected = this.leaderOptions.find(o => o.id === this.selectedLeaderId);
+                    if (selected) leaderName = selected.nombre.replace(/\s+/g, '_').toUpperCase();
+                }
+
+                const fileName = `REPORTE_LIDER_${leaderName}_${new Date().toISOString().split('T')[0]}.xlsx`;
+                a.download = fileName;
+                a.click();
+                window.URL.revokeObjectURL(url);
+                this.generatingReport = false;
+                this.isReportModalOpen = false;
+            },
+            error: (err: any) => {
+                console.error('Failed to download report by leader', err);
+                this.generatingReport = false;
             }
         });
     }

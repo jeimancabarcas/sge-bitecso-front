@@ -12,15 +12,17 @@ import { UiChartComponent } from '../../../shared/components/ui-chart/ui-chart.c
 import { ChiefService, ChiefStats } from '../../../core/services/chief.service';
 
 @Component({
-    selector: 'app-dashboard',
-    standalone: true,
-    imports: [CommonModule, FormsModule, UiStatTileComponent, UiCardComponent, UiButtonComponent, UiSelectComponent, UiChartComponent],
-    template: `
+  selector: 'app-dashboard',
+  standalone: true,
+  imports: [CommonModule, FormsModule, UiStatTileComponent, UiCardComponent, UiButtonComponent, UiSelectComponent, UiChartComponent],
+  template: `
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <h2 class="text-2xl font-display font-medium text-white tracking-tight">DASHBOARD</h2>
-        <div class="flex space-x-3">
-           <app-ui-button variant="outline" (onClick)="refresh()">ACTUALIZAR DATOS</app-ui-button>
+        <div class="flex items-center space-x-3">
+           <app-ui-button variant="primary" size="sm" (onClick)="isReportModalOpen = true">REPORTE POR LÍDER</app-ui-button>
+           <app-ui-button variant="outline" size="sm" (onClick)="downloadReport()">REPORTE GENERAL</app-ui-button>
+           <app-ui-button variant="outline" size="sm" (onClick)="refresh()" [loading]="loadingStats">REFRESCAR</app-ui-button>
         </div>
       </div>
 
@@ -351,6 +353,42 @@ import { ChiefService, ChiefStats } from '../../../core/services/chief.service';
           </app-ui-card>
         </div>
       </div>
+
+      <!-- Report Selection Modal -->
+      <div *ngIf="isReportModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] w-full max-w-md p-6 space-y-6 shadow-2xl animate-fade-in relative">
+          <button (click)="isReportModalOpen = false" class="absolute top-4 right-4 text-[var(--muted)] hover:text-white transition-colors">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          <div>
+            <h3 class="text-xl font-display font-medium text-white mb-1">GENERAR REPORTE</h3>
+            <p class="text-[var(--muted)] text-sm font-mono">Seleccione el alcance del reporte electoral.</p>
+          </div>
+
+          <div class="space-y-4">
+            <app-ui-select
+              label="SELECCIONAR LÍDER"
+              [options]="leaderOptions"
+              [(ngModel)]="selectedLeaderId"
+              placeholder="TODOS LOS LÍDERES"
+              [searchable]="true"
+            ></app-ui-select>
+
+            <div class="pt-4 flex flex-col gap-3">
+              <app-ui-button variant="primary" [fullWidth]="true" (onClick)="downloadReportByLeader()" [loading]="generatingReport">
+                DESCARGAR REPORTE EXCEL
+              </app-ui-button>
+              <app-ui-button variant="outline" [fullWidth]="true" (onClick)="isReportModalOpen = false">
+                CANCELAR
+              </app-ui-button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Fixed Tooltip Portal -->
       <div *ngIf="hoveredVoter" 
            class="fixed z-[100] w-64 bg-[#0f172a] border border-[var(--primary)]/30 text-xs text-white p-3 rounded-[var(--radius-sm)] shadow-[0_0_20px_rgba(0,0,0,0.8)] pointer-events-none transition-opacity duration-150 animate-fade-in"
@@ -397,176 +435,232 @@ import { ChiefService, ChiefStats } from '../../../core/services/chief.service';
   `
 })
 export class DashboardComponent implements OnInit {
-    voterService = inject(VoterService);
-    chiefService = inject(ChiefService);
-    stats: DashboardStats | null = null;
-    realStats: RealDashboardStats | null = null; // New property
-    digitatorsStats: DigitadorStats[] = []; // New property
-    leadersStats: LeaderStats[] = []; // New property
-    chiefsStats: ChiefStats[] = [];
+  voterService = inject(VoterService);
+  chiefService = inject(ChiefService);
+  stats: DashboardStats | null = null;
+  realStats: RealDashboardStats | null = null; // New property
+  digitatorsStats: DigitadorStats[] = []; // New property
+  leadersStats: LeaderStats[] = []; // New property
+  chiefsStats: ChiefStats[] = [];
 
-    // Chart Data
-    statusChartData: number[] = [];
-    statusChartLabels: string[] = ['Éxito', 'Espera', 'Fallo', 'Error'];
-    statusChartColors: string[] = ['#10b981', '#3b82f6', '#ef4444', '#f59e0b'];
+  // Leader selection for report
+  leaderOptions: { value: any, label: string }[] = [];
+  selectedLeaderId: string | null = null;
+  isReportModalOpen: boolean = false;
+  generatingReport: boolean = false;
 
-    chiefChartData: any[] = [];
-    chiefChartLabels: string[] = [];
-    chiefChartColors: string[] = ['#3b82f6', '#f43f5e']; // blue for leaders, rose for voters
+  // Chart Data
+  statusChartData: number[] = [];
+  statusChartLabels: string[] = ['Éxito', 'Espera', 'Fallo', 'Error'];
+  statusChartColors: string[] = ['#10b981', '#3b82f6', '#ef4444', '#f59e0b'];
 
-    // Tooltip State
-    hoveredVoter: Voter | null = null;
-    tooltipPosition = { top: 0, left: 0 };
-    tooltipType: 'detail' | 'status' = 'detail';
+  chiefChartData: any[] = [];
+  chiefChartLabels: string[] = [];
+  chiefChartColors: string[] = ['#3b82f6', '#f43f5e']; // blue for leaders, rose for voters
 
-    // Voter Pagination
-    voters: Voter[] = [];
-    totalVoters: number = 0;
-    page: number = 1;
-    limit: number = 10;
-    totalPages: number = 1;
-    loading: boolean = false; // Loading state (Voters)
-    loadingStats: boolean = false; // Loading state (Stats)
-    limitOptions = [
-        { value: 10, label: '10 registros' },
-        { value: 20, label: '20 registros' },
-        { value: 50, label: '50 registros' }
-    ];
+  // Tooltip State
+  hoveredVoter: Voter | null = null;
+  tooltipPosition = { top: 0, left: 0 };
+  tooltipType: 'detail' | 'status' = 'detail';
 
-    ngOnInit() {
-        this.refresh();
-        // loadVoters is called in refresh now if needed, or separately? 
-        // User wants "Actualizar Datos" to load EVERYTHING.
-        // Let's call loadVoters inside refresh or alongside it. 
-        // But ngOnInit usually loads initially. 
-        // Let's make refresh call everything.
-    }
+  // Voter Pagination
+  voters: Voter[] = [];
+  totalVoters: number = 0;
+  page: number = 1;
+  limit: number = 10;
+  totalPages: number = 1;
+  loading: boolean = false; // Loading state (Voters)
+  loadingStats: boolean = false; // Loading state (Stats)
+  limitOptions = [
+    { value: 10, label: '10 registros' },
+    { value: 20, label: '20 registros' },
+    { value: 50, label: '50 registros' }
+  ];
 
-    refresh() {
-        this.loadingStats = true;
+  ngOnInit() {
+    this.refresh();
+    // loadVoters is called in refresh now if needed, or separately? 
+    // User wants "Actualizar Datos" to load EVERYTHING.
+    // Let's call loadVoters inside refresh or alongside it. 
+    // But ngOnInit usually loads initially. 
+    // Let's make refresh call everything.
+  }
 
-        // Clear data to show loading state (if desired by user "tout appear loading")
-        this.realStats = null;
-        this.digitatorsStats = [];
-        this.leadersStats = [];
+  refresh() {
+    this.loadingStats = true;
 
-        // Trigger voters load too
-        this.loadVoters();
+    // Clear data to show loading state (if desired by user "tout appear loading")
+    this.realStats = null;
+    this.digitatorsStats = [];
+    this.leadersStats = [];
 
-        const requests = {
-            stats: this.voterService.getStats(),
-            dashboard: this.voterService.getDashboardStats(),
-            digitators: this.voterService.getDigitatorsStats(),
-            leaders: this.voterService.getLeadersStats(),
-            chiefs: this.chiefService.getStats()
-        };
+    // Trigger voters load too
+    this.loadVoters();
 
-        forkJoin(requests)
-            .pipe(finalize(() => this.loadingStats = false))
-            .subscribe({
-                next: (results) => {
-                    this.stats = results.stats;
-                    this.realStats = results.dashboard;
-                    this.digitatorsStats = results.digitators;
-                    this.leadersStats = results.leaders;
-                    this.chiefsStats = results.chiefs.data || [];
+    const requests = {
+      stats: this.voterService.getStats(),
+      dashboard: this.voterService.getDashboardStats(),
+      digitators: this.voterService.getDigitatorsStats(),
+      leaders: this.voterService.getLeadersStats(),
+      chiefs: this.chiefService.getStats(),
+      leadersList: this.voterService.getLeaders()
+    };
 
-                    // Update doughnut chart data
-                    this.statusChartData = [
-                        results.dashboard.success || 0,
-                        results.dashboard.pending || 0,
-                        results.dashboard.failed || 0,
-                        results.dashboard.error || 0
-                    ];
+    forkJoin(requests)
+      .pipe(finalize(() => this.loadingStats = false))
+      .subscribe({
+        next: (results) => {
+          this.stats = results.stats;
+          this.realStats = results.dashboard;
+          this.digitatorsStats = results.digitators;
+          this.leadersStats = results.leaders;
+          this.chiefsStats = results.chiefs.data || [];
 
-                    // Update chief bar chart data (Grouped datasets)
-                    const rawData = results.chiefs?.data || (Array.isArray(results.chiefs) ? results.chiefs : []);
-                    this.chiefsStats = rawData;
+          // Map leaders to options
+          const list = results.leadersList || [];
+          this.leaderOptions = [
+            { value: null, label: 'TODOS LOS LÍDERES' },
+            ...list.map(l => ({ value: l.id, label: l.nombre }))
+          ];
 
-                    if (this.chiefsStats.length > 0) {
-                        this.chiefChartLabels = this.chiefsStats.map(c => c.nombre || 'Sin nombre');
-                        this.chiefChartData = [
-                            {
-                                label: 'Líderes',
-                                data: this.chiefsStats.map(c => Number(c.totalLeaders || c.totalleaders || 0))
-                            },
-                            {
-                                label: 'Votantes',
-                                data: this.chiefsStats.map(c => Number(c.totalVoters || c.totalvoters || 0))
-                            }
-                        ];
-                    } else {
-                        this.chiefChartLabels = [];
-                        this.chiefChartData = [];
-                    }
-                },
-                error: (err) => console.error('Failed to refresh data', err)
-            });
-    }
+          // Update doughnut chart data
+          this.statusChartData = [
+            results.dashboard.success || 0,
+            results.dashboard.pending || 0,
+            results.dashboard.failed || 0,
+            results.dashboard.error || 0
+          ];
 
-    loadVoters() {
-        this.loading = true;
-        this.voters = []; // Clear current data to show only loader
-        this.voterService.getVoters(this.page, this.limit).subscribe({
-            next: (response) => {
-                this.voters = response.items;
-                this.totalVoters = response.total;
-                this.totalPages = response.totalPages;
-                this.loading = false;
-            },
-            error: (err) => {
-                console.error('Failed to load voters', err);
-                this.loading = false;
-            }
-        });
-    }
+          // Update chief bar chart data (Grouped datasets)
+          const rawData = results.chiefs?.data || (Array.isArray(results.chiefs) ? results.chiefs : []);
+          this.chiefsStats = rawData;
 
-    changePage(newPage: number) {
-        if (newPage >= 1 && newPage <= this.totalPages) {
-            this.page = newPage;
-            this.loadVoters();
+          if (this.chiefsStats.length > 0) {
+            this.chiefChartLabels = this.chiefsStats.map(c => c.nombre || 'Sin nombre');
+            this.chiefChartData = [
+              {
+                label: 'Líderes',
+                data: this.chiefsStats.map(c => Number(c.totalLeaders || c.totalleaders || 0))
+              },
+              {
+                label: 'Votantes',
+                data: this.chiefsStats.map(c => Number(c.totalVoters || c.totalvoters || 0))
+              }
+            ];
+          } else {
+            this.chiefChartLabels = [];
+            this.chiefChartData = [];
+          }
+        },
+        error: (err) => console.error('Failed to refresh data', err)
+      });
+  }
+
+  downloadReport() {
+    this.voterService.getReport().subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reporte_general_${new Date().toISOString().split('T')[0]}.xlsx`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err: any) => console.error('Failed to download general report', err)
+    });
+  }
+
+  downloadReportByLeader() {
+    this.generatingReport = true;
+    this.voterService.getReportByLeader(this.selectedLeaderId || undefined).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+
+        let leaderName = 'TODOS';
+        if (this.selectedLeaderId) {
+          const selected = this.leaderOptions.find(o => o.value === this.selectedLeaderId);
+          if (selected) leaderName = selected.label.replace(/\s+/g, '_').toUpperCase();
         }
+
+        const fileName = `REPORTE_LIDER_${leaderName}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        a.download = fileName;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.generatingReport = false;
+        this.isReportModalOpen = false;
+      },
+      error: (err: any) => {
+        console.error('Failed to download report by leader', err);
+        this.generatingReport = false;
+      }
+    });
+  }
+
+  loadVoters() {
+    this.loading = true;
+    this.voters = []; // Clear current data to show only loader
+    this.voterService.getVoters(this.page, this.limit).subscribe({
+      next: (response) => {
+        this.voters = response.items;
+        this.totalVoters = response.total;
+        this.totalPages = response.totalPages;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load voters', err);
+        this.loading = false;
+      }
+    });
+  }
+
+  changePage(newPage: number) {
+    if (newPage >= 1 && newPage <= this.totalPages) {
+      this.page = newPage;
+      this.loadVoters();
     }
+  }
 
-    changeLimit(newLimit: number) {
-        this.limit = newLimit;
-        this.page = 1; // Reset to first page
-        this.loadVoters();
+  changeLimit(newLimit: number) {
+    this.limit = newLimit;
+    this.page = 1; // Reset to first page
+    this.loadVoters();
+  }
+
+  calculateProgress(value: number = 0, total: number = 0): number {
+    if (!total || total === 0) return 0;
+    return Math.round((value / total) * 100);
+  }
+
+  showTooltip(event: MouseEvent, voter: Voter, type: 'detail' | 'status' = 'detail') {
+    if (type === 'detail' && !voter.detail) return;
+
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+
+    const tooltipHeight = type === 'detail' ? 140 : 100;
+    const showBelow = rect.top < 150;
+
+    this.hoveredVoter = voter;
+    this.tooltipType = type;
+
+    this.tooltipPosition = {
+      left: rect.left + (rect.width / 2) - 128, // Center (256px width / 2)
+      top: showBelow ? (rect.bottom + 10) : (rect.top - tooltipHeight - 10)
+    };
+  }
+
+  hideTooltip() {
+    this.hoveredVoter = null;
+  }
+
+  getStatusClass(status?: string): string {
+    switch (status) {
+      case 'SUCCESS': return 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20';
+      case 'FAILED': return 'bg-red-500/10 text-red-500 border border-red-500/20';
+      case 'ERROR': return 'bg-amber-500/10 text-amber-500 border border-amber-500/20';
+      default: return 'bg-blue-500/10 text-blue-500 border border-blue-500/20';
     }
-
-    calculateProgress(value: number = 0, total: number = 0): number {
-        if (!total || total === 0) return 0;
-        return Math.round((value / total) * 100);
-    }
-
-    showTooltip(event: MouseEvent, voter: Voter, type: 'detail' | 'status' = 'detail') {
-        if (type === 'detail' && !voter.detail) return;
-
-        const target = event.currentTarget as HTMLElement;
-        const rect = target.getBoundingClientRect();
-
-        const tooltipHeight = type === 'detail' ? 140 : 100;
-        const showBelow = rect.top < 150;
-
-        this.hoveredVoter = voter;
-        this.tooltipType = type;
-
-        this.tooltipPosition = {
-            left: rect.left + (rect.width / 2) - 128, // Center (256px width / 2)
-            top: showBelow ? (rect.bottom + 10) : (rect.top - tooltipHeight - 10)
-        };
-    }
-
-    hideTooltip() {
-        this.hoveredVoter = null;
-    }
-
-    getStatusClass(status?: string): string {
-        switch (status) {
-            case 'SUCCESS': return 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20';
-            case 'FAILED': return 'bg-red-500/10 text-red-500 border border-red-500/20';
-            case 'ERROR': return 'bg-amber-500/10 text-amber-500 border border-amber-500/20';
-            default: return 'bg-blue-500/10 text-blue-500 border border-blue-500/20';
-        }
-    }
+  }
 }

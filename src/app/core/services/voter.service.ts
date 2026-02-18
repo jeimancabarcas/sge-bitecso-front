@@ -115,6 +115,11 @@ export class VoterService {
         return this.http.get(`${this.apiUrl}/voters/report`, { responseType: 'blob' });
     }
 
+    getReportByLeader(leaderId?: string): Observable<Blob> {
+        const url = leaderId ? `${this.apiUrl}/voters/report-by-leader?leaderId=${leaderId}` : `${this.apiUrl}/voters/report-by-leader`;
+        return this.http.get(url, { responseType: 'blob' });
+    }
+
     getLeaders(): Observable<Leader[]> {
         return this.http.get<Leader[]>(`${this.apiUrl}/leaders`);
     }
