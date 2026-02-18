@@ -1,4 +1,4 @@
 export const API_CONFIG = {
-    baseUrl: 'http://api.rjimproves.com'
+    baseUrl: 'https://api.rjimproves.com'
 };
 
