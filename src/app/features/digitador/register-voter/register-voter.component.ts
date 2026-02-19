@@ -19,7 +19,7 @@ import { MyRecordsComponent } from '../my-records/my-records.component';
       <section>
         <div class="mb-6">
           <h2 class="text-2xl font-display font-medium text-white tracking-tight">REGISTRO DE VOTANTES</h2>
-          <p class="text-[var(--muted)] text-sm">Ingrese los detalles del votante con precisión. Todos los campos son obligatorios.</p>
+          <p class="text-[var(--muted)] text-sm">Ingrese los detalles del votante con precisión. Los campos marcados con (*) son obligatorios.</p>
         </div>
 
         <app-ui-card>
@@ -46,9 +46,9 @@ import { MyRecordsComponent } from '../my-records/my-records.component';
               <!-- Telefono -->
               <app-ui-input 
                 label="TELÉFONO" 
-                placeholder="Número Celular" 
+                placeholder="Número Celular (Opcional)" 
                 formControlName="telefono"
-                [required]="true"
+                [required]="false"
                 [error]="getErrorMessage('telefono')"
               ></app-ui-input>
 
@@ -101,7 +101,7 @@ export class RegisterVoterComponent implements OnInit {
   voterForm = this.fb.group({
     cedula: ['', [Validators.required, Validators.pattern('^[0-9]*$'), Validators.minLength(6)]],
     nombre: ['', [Validators.required, Validators.minLength(3)]],
-    telefono: ['', [Validators.required, Validators.pattern('^[0-9]*$')]],
+    telefono: ['', [Validators.pattern('^[0-9]*$')]],
     leader_id: ['', [Validators.required]]
   });
 
