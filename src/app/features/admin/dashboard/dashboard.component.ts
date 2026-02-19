@@ -309,7 +309,7 @@ import { ChiefService, ChiefStats } from '../../../core/services/chief.service';
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-[var(--border)]">
-                  <tr *ngFor="let stat of leadersStats" class="group hover:bg-white/5 transition-colors">
+                  <tr *ngFor="let stat of paginatedLeadersStats" class="group hover:bg-white/5 transition-colors">
                     <td class="p-2">
                         <div class="flex flex-col">
                             <span class="text-xs font-medium text-[var(--foreground)]">{{ stat.name }}</span>
@@ -333,7 +333,7 @@ import { ChiefService, ChiefStats } from '../../../core/services/chief.service';
                     </td>
                   </tr>
                   
-                  <tr *ngIf="leadersStats.length === 0 && !loadingStats">
+                  <tr *ngIf="paginatedLeadersStats.length === 0 && !loadingStats">
                     <td colspan="5" class="p-4 text-center text-xs text-[var(--muted)]">
                         No hay datos disponibles.
                     </td>
@@ -349,6 +349,29 @@ import { ChiefService, ChiefStats } from '../../../core/services/chief.service';
                   </tr>
                 </tbody>
               </table>
+            </div>
+
+            <!-- Leader Pagination Footer -->
+            <div *ngIf="leadersStats.length > 0" class="p-2 border-t border-[var(--border)] flex items-center justify-between">
+                <span class="text-[10px] font-mono text-[var(--muted)]">
+                    Pág {{ leaderPage }} / {{ leaderTotalPages }}
+                </span>
+                <div class="flex space-x-1">
+                    <app-ui-button 
+                        variant="outline" 
+                        size="xs"
+                        [disabled]="leaderPage === 1"
+                        (onClick)="changeLeaderPage(leaderPage - 1)">
+                        <span class="text-[10px]">Prev</span>
+                    </app-ui-button>
+                    <app-ui-button 
+                        variant="outline" 
+                        size="xs"
+                        [disabled]="leaderPage === leaderTotalPages"
+                        (onClick)="changeLeaderPage(leaderPage + 1)">
+                        <span class="text-[10px]">Next</span>
+                    </app-ui-button>
+                </div>
             </div>
           </app-ui-card>
         </div>
@@ -477,6 +500,17 @@ export class DashboardComponent implements OnInit {
     { value: 50, label: '50 registros' }
   ];
 
+  // Leader Pagination State
+  leaderPage: number = 1;
+  leaderLimit: number = 10;
+  leaderTotalPages: number = 1;
+
+  get paginatedLeadersStats(): LeaderStats[] {
+    const start = (this.leaderPage - 1) * this.leaderLimit;
+    const end = start + this.leaderLimit;
+    return this.leadersStats.slice(start, end);
+  }
+
   ngOnInit() {
     this.refresh();
     // loadVoters is called in refresh now if needed, or separately? 
@@ -514,6 +548,8 @@ export class DashboardComponent implements OnInit {
           this.realStats = results.dashboard;
           this.digitatorsStats = results.digitators;
           this.leadersStats = results.leaders;
+          this.leaderTotalPages = Math.ceil(this.leadersStats.length / this.leaderLimit) || 1;
+          this.leaderPage = 1; // Reset to first page on refresh
           this.chiefsStats = results.chiefs.data || [];
 
           // Map leaders to options
@@ -626,6 +662,12 @@ export class DashboardComponent implements OnInit {
     this.limit = newLimit;
     this.page = 1; // Reset to first page
     this.loadVoters();
+  }
+
+  changeLeaderPage(newPage: number) {
+    if (newPage >= 1 && newPage <= this.leaderTotalPages) {
+      this.leaderPage = newPage;
+    }
   }
 
   calculateProgress(value: number = 0, total: number = 0): number {
