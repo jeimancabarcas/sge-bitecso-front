@@ -18,6 +18,8 @@ export class RoleRedirectComponent implements OnInit {
             this.router.navigate(['/admin/dashboard']);
         } else if (role === 'digitador') {
             this.router.navigate(['/digitador/register']);
+        } else if (role === 'viewer') {
+            this.router.navigate(['/viewer/dashboard']);
         } else {
             this.router.navigate(['/login']);
         }

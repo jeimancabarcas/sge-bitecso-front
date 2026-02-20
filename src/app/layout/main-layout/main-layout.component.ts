@@ -70,11 +70,20 @@ import { UiButtonComponent } from '../../shared/components/ui-button/ui-button.c
                class="flex items-center px-3 py-2 text-sm font-medium text-[var(--muted)] rounded-[var(--radius-sm)] border border-transparent hover:bg-white/5 hover:text-white transition-all group">
                Gestión de Jefes
             </a>
-
           </ng-container>
 
-          <!-- Digitador Links (Digitadores Only) -->
-          <ng-container *ngIf="!isAdmin()">
+          <!-- Viewer Links -->
+          <ng-container *ngIf="isViewer()">
+            <a routerLink="/viewer/dashboard" 
+               (click)="closeSidebarOnMobile()"
+               routerLinkActive="bg-white/5 text-white border-white/10" 
+               class="flex items-center px-3 py-2 text-sm font-medium text-[var(--muted)] rounded-[var(--radius-sm)] border border-transparent hover:bg-white/5 hover:text-white transition-all group">
+              Dashboard
+            </a>
+          </ng-container>
+
+          <!-- Digitador Links -->
+          <ng-container *ngIf="isDigitador()">
               <a routerLink="/digitador/leaders" 
                  (click)="closeSidebarOnMobile()"
                  routerLinkActive="bg-white/5 text-white border-white/10" 
@@ -129,7 +138,7 @@ import { UiButtonComponent } from '../../shared/components/ui-button/ui-button.c
               </div>
           </div>
           <div class="flex items-center space-x-3">
-              <app-ui-button variant="primary" size="sm" (onClick)="generateReport()" [loading]="isReporting">
+              <app-ui-button *ngIf="!isViewer()" variant="primary" size="sm" (onClick)="generateReport()" [loading]="isReporting">
                   GENERAR REPORTE
               </app-ui-button>
           </div>
@@ -152,6 +161,14 @@ export class MainLayoutComponent {
 
   isAdmin() {
     return this.authService.isAdmin();
+  }
+
+  isDigitador() {
+    return this.authService.isDigitador();
+  }
+
+  isViewer() {
+    return this.authService.isViewer();
   }
 
   logout() {

@@ -21,6 +21,7 @@ import { ChiefService, ChiefStats } from '../../../core/services/chief.service';
         <h2 class="text-2xl font-display font-medium text-white tracking-tight">DASHBOARD</h2>
         <div class="flex items-center space-x-3">
            <app-ui-button variant="primary" size="sm" (onClick)="isReportModalOpen = true">REPORTE POR LÍDER</app-ui-button>
+           <app-ui-button variant="primary" size="sm" (onClick)="isChiefReportModalOpen = true">REPORTE POR JEFE</app-ui-button>
            <app-ui-button variant="outline" size="sm" (onClick)="downloadReport()">REPORTE GENERAL</app-ui-button>
            <app-ui-button variant="outline" size="sm" (onClick)="refresh()" [loading]="loadingStats">REFRESCAR</app-ui-button>
         </div>
@@ -387,8 +388,8 @@ import { ChiefService, ChiefStats } from '../../../core/services/chief.service';
           </button>
 
           <div>
-            <h3 class="text-xl font-display font-medium text-white mb-1">GENERAR REPORTE</h3>
-            <p class="text-[var(--muted)] text-sm font-mono">Seleccione el alcance del reporte electoral.</p>
+            <h3 class="text-xl font-display font-medium text-white mb-1">GENERAR REPORTE (LÍDER)</h3>
+            <p class="text-[var(--muted)] text-sm font-mono">Seleccione el líder para filtrar el reporte electoral.</p>
           </div>
 
           <div class="space-y-4">
@@ -405,6 +406,41 @@ import { ChiefService, ChiefStats } from '../../../core/services/chief.service';
                 DESCARGAR REPORTE EXCEL
               </app-ui-button>
               <app-ui-button variant="outline" [fullWidth]="true" (onClick)="isReportModalOpen = false">
+                CANCELAR
+              </app-ui-button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report Selection Modal (Chief) -->
+      <div *ngIf="isChiefReportModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] w-full max-w-md p-6 space-y-6 shadow-2xl animate-fade-in relative">
+          <button (click)="isChiefReportModalOpen = false" class="absolute top-4 right-4 text-[var(--muted)] hover:text-white transition-colors">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          <div>
+            <h3 class="text-xl font-display font-medium text-white mb-1">GENERAR REPORTE (JEFE)</h3>
+            <p class="text-[var(--muted)] text-sm font-mono">Seleccione el jefe para filtrar el reporte electoral.</p>
+          </div>
+
+          <div class="space-y-4">
+            <app-ui-select
+              label="SELECCIONAR JEFE"
+              [options]="chiefOptions"
+              [(ngModel)]="selectedChiefId"
+              placeholder="TODOS LOS JEFES"
+              [searchable]="true"
+            ></app-ui-select>
+
+            <div class="pt-4 flex flex-col gap-3">
+              <app-ui-button variant="primary" [fullWidth]="true" (onClick)="downloadReportByChief()" [loading]="generatingReport">
+                DESCARGAR REPORTE EXCEL
+              </app-ui-button>
+              <app-ui-button variant="outline" [fullWidth]="true" (onClick)="isChiefReportModalOpen = false">
                 CANCELAR
               </app-ui-button>
             </div>
@@ -470,6 +506,12 @@ export class DashboardComponent implements OnInit {
   leaderOptions: { value: any, label: string }[] = [];
   selectedLeaderId: string | null = null;
   isReportModalOpen: boolean = false;
+
+  // Chief selection for report
+  chiefOptions: { value: any, label: string }[] = [];
+  selectedChiefId: string | null = null;
+  isChiefReportModalOpen: boolean = false;
+
   generatingReport: boolean = false;
 
   // Chart Data
@@ -537,7 +579,8 @@ export class DashboardComponent implements OnInit {
       digitators: this.voterService.getDigitatorsStats(),
       leaders: this.voterService.getLeadersStats(),
       chiefs: this.chiefService.getStats(),
-      leadersList: this.voterService.getLeaders()
+      leadersList: this.voterService.getLeaders(),
+      chiefsList: this.chiefService.findAll()
     };
 
     forkJoin(requests)
@@ -557,6 +600,13 @@ export class DashboardComponent implements OnInit {
           this.leaderOptions = [
             { value: null, label: 'TODOS LOS LÍDERES' },
             ...list.map(l => ({ value: l.id, label: l.nombre }))
+          ];
+
+          // Map chiefs to options
+          const cList = results.chiefsList || [];
+          this.chiefOptions = [
+            { value: null, label: 'TODOS LOS JEFES' },
+            ...cList.map(c => ({ value: c.id, label: c.nombre }))
           ];
 
           // Update doughnut chart data
@@ -629,6 +679,34 @@ export class DashboardComponent implements OnInit {
       },
       error: (err: any) => {
         console.error('Failed to download report by leader', err);
+        this.generatingReport = false;
+      }
+    });
+  }
+
+  downloadReportByChief() {
+    this.generatingReport = true;
+    this.voterService.getReportByChief(this.selectedChiefId || undefined).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+
+        let chiefName = 'TODOS';
+        if (this.selectedChiefId) {
+          const selected = this.chiefOptions.find(o => o.value === this.selectedChiefId);
+          if (selected) chiefName = selected.label.replace(/\s+/g, '_').toUpperCase();
+        }
+
+        const fileName = `REPORTE_JEFE_${chiefName}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        a.download = fileName;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.generatingReport = false;
+        this.isChiefReportModalOpen = false;
+      },
+      error: (err: any) => {
+        console.error('Failed to download report by chief', err);
         this.generatingReport = false;
       }
     });

@@ -60,6 +60,18 @@ export const routes: Routes = [
                     },
                     { path: '', redirectTo: 'register', pathMatch: 'full' }
                 ]
+            },
+            {
+                path: 'viewer',
+                canActivate: [authGuard],
+                data: { role: 'viewer' },
+                children: [
+                    {
+                        path: 'dashboard',
+                        loadComponent: () => import('./features/admin/dashboard/dashboard.component').then(m => m.DashboardComponent)
+                    },
+                    { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
+                ]
             }
         ]
     },

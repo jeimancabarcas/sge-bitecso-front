@@ -139,6 +139,11 @@ export class VoterService {
             params: { page: page.toString(), limit: limit.toString() }
         });
     }
+
+    getReportByChief(chiefId?: string): Observable<Blob> {
+        const url = chiefId ? `${this.apiUrl}/voters/report-by-chief?chiefId=${chiefId}` : `${this.apiUrl}/voters/report-by-chief`;
+        return this.http.get(url, { responseType: 'blob' });
+    }
 }
 
 function theMockStats(): Observable<DashboardStats> {

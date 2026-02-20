@@ -34,6 +34,8 @@ export class AuthService {
         return !!user && !this.isTokenExpired();
     });
     public isAdmin = computed(() => this.currentUserSignal()?.role === 'admin');
+    public isDigitador = computed(() => this.currentUserSignal()?.role === 'digitador');
+    public isViewer = computed(() => this.currentUserSignal()?.role === 'viewer');
 
     constructor() {
         if (this.isTokenExpired()) {
@@ -53,7 +55,7 @@ export class AuthService {
                     username: decoded.username,
                     fullName: decoded.fullName || decoded.username,
                     nombre: decoded.fullName || decoded.username,
-                    role: decoded.role as 'admin' | 'digitador'
+                    role: decoded.role as 'admin' | 'digitador' | 'viewer'
                 };
 
                 const authResponse: AuthResponse = {
