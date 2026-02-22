@@ -34,9 +34,9 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
       </div>
 
       <app-ui-card>
-        <!-- Search Bar -->
-        <div class="mb-6">
-            <div class="relative max-w-md">
+        <!-- Filters -->
+        <div class="mb-6 flex flex-col md:flex-row gap-4">
+            <div class="relative flex-1 max-w-md">
                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--muted)]">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -48,6 +48,20 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
                     placeholder="Buscar por cédula o nombre..." 
                     class="block w-full pl-10 pr-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-[var(--radius-sm)] text-sm text-white placeholder-[var(--muted)] outline-none focus:border-[var(--primary)] transition-colors"
                 >
+            </div>
+
+            <div class="w-full md:w-48">
+                <select 
+                    [(ngModel)]="selectedStatus"
+                    (change)="onStatusChange()"
+                    class="w-full bg-[var(--background)] border border-[var(--border)] rounded-[var(--radius-sm)] px-3 py-2 text-sm text-white outline-none focus:border-[var(--primary)]"
+                >
+                    <option value="">TODOS LOS ESTADOS</option>
+                    <option value="PENDING">PENDING</option>
+                    <option value="SUCCESS">SUCCESS</option>
+                    <option value="FAILED">FAILED</option>
+                    <option value="ERROR">ERROR</option>
+                </select>
             </div>
         </div>
 
@@ -305,8 +319,9 @@ export class MyRecordsComponent implements OnInit {
     loading = signal(false);
     error = signal('');
 
-    // Search Logic
+    // Search & Filter Logic
     searchControl = new FormControl('');
+    selectedStatus = '';
 
     // Report Logic
     isReportModalOpen = false;
@@ -357,6 +372,11 @@ export class MyRecordsComponent implements OnInit {
         // Method no longer needed with FormControl valueChanges
     }
 
+    onStatusChange() {
+        this.currentPage.set(1);
+        this.loadRecords();
+    }
+
     loadLeaders() {
         this.voterService.getLeaders().subscribe({
             next: (data) => this.leaderOptions = data,
@@ -377,7 +397,7 @@ export class MyRecordsComponent implements OnInit {
 
         const query = this.searchControl.value || '';
 
-        this.voterService.getMyRecords(this.currentPage(), this.limit, query).subscribe({
+        this.voterService.getMyRecords(this.currentPage(), this.limit, query, this.selectedStatus).subscribe({
             next: (response) => {
                 this.data.set(response);
                 this.loading.set(false);

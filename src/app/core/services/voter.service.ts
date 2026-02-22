@@ -128,15 +128,17 @@ export class VoterService {
         return this.http.post(`${this.apiUrl}/voters`, voter);
     }
 
-    getMyRecords(page: number = 1, limit: number = 10, search?: string): Observable<VoterResponse> {
+    getMyRecords(page: number = 1, limit: number = 10, search?: string, status?: string): Observable<VoterResponse> {
         const params: any = { page: page.toString(), limit: limit.toString() };
         if (search) params.search = search;
+        if (status) params.status = status;
         return this.http.get<VoterResponse>(`${this.apiUrl}/voters/my-records`, { params });
     }
 
-    getVoters(page: number = 1, limit: number = 10, search?: string): Observable<VoterResponse> {
+    getVoters(page: number = 1, limit: number = 10, search?: string, status?: string): Observable<VoterResponse> {
         const params: any = { page: page.toString(), limit: limit.toString() };
         if (search) params.search = search;
+        if (status) params.status = status;
         return this.http.get<VoterResponse>(`${this.apiUrl}/voters`, { params });
     }
 
