@@ -483,7 +483,7 @@ export class MyRecordsComponent implements OnInit {
     }
 
     canEdit(voter: Voter): boolean {
-        return voter.verification_status === 'PENDING' || voter.verification_status === 'FAILED';
+        return true; // All records can be edited as requested
     }
 
     openEditModal(voter: Voter) {
