@@ -1,28 +1,31 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, Validators, FormControl } from '@angular/forms';
 import { VoterService, VoterResponse, Voter } from '../../../core/services/voter.service';
 import { UiCardComponent } from '../../../shared/components/ui-card/ui-card.component';
 import { UiButtonComponent } from '../../../shared/components/ui-button/ui-button.component';
 import { ChiefService } from '../../../core/services/chief.service';
+import { UiInputComponent } from '../../../shared/components/ui-input/ui-input.component';
+import { UiSelectComponent } from '../../../shared/components/ui-select/ui-select.component';
+import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 
 @Component({
     selector: 'app-my-records',
     standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, UiCardComponent, UiButtonComponent],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, UiCardComponent, UiButtonComponent, UiInputComponent, UiSelectComponent],
     template: `
     <div class="space-y-6">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
            <h2 class="text-2xl font-display font-medium text-white tracking-tight">MIS REGISTROS</h2>
            <p class="text-[var(--muted)] text-sm">Historial de votantes registrados y estado de verificación.</p>
         </div>
-        <div class="flex space-x-2">
+        <div class="flex flex-wrap gap-2">
             <app-ui-button variant="primary" (onClick)="isReportModalOpen = true">
-                REPORTE POR LÍDER
+                REPORTE LÍDER
             </app-ui-button>
             <app-ui-button variant="primary" (onClick)="isChiefReportModalOpen = true">
-                REPORTE POR JEFE
+                REPORTE JEFE
             </app-ui-button>
             <app-ui-button variant="outline" (onClick)="loadRecords()">
                 ACTUALIZAR
@@ -31,6 +34,23 @@ import { ChiefService } from '../../../core/services/chief.service';
       </div>
 
       <app-ui-card>
+        <!-- Search Bar -->
+        <div class="mb-6">
+            <div class="relative max-w-md">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--muted)]">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </span>
+                <input 
+                    type="text" 
+                    [formControl]="searchControl"
+                    placeholder="Buscar por cédula o nombre..." 
+                    class="block w-full pl-10 pr-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-[var(--radius-sm)] text-sm text-white placeholder-[var(--muted)] outline-none focus:border-[var(--primary)] transition-colors"
+                >
+            </div>
+        </div>
+
         <!-- Loading State -->
         <div *ngIf="loading()" class="py-12 text-center text-[var(--muted)] animate-pulse">
             CARGANDO DATOS DEL SISTEMA...
@@ -52,6 +72,7 @@ import { ChiefService } from '../../../core/services/chief.service';
                         <th class="p-3">Líder</th>
                         <th class="p-3">Estado</th>
                         <th class="p-3">Fecha</th>
+                        <th class="p-3 text-center">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[var(--border)]">
@@ -71,12 +92,19 @@ import { ChiefService } from '../../../core/services/chief.service';
                         <td class="p-3 text-[var(--muted)] text-xs font-mono">
                             {{ voter.created_at | date:'short' }}
                         </td>
+                        <td class="p-3 text-center">
+                            <button *ngIf="canEdit(voter)" (click)="openEditModal(voter)" class="text-[var(--secondary)] hover:text-[var(--secondary)]/80 transition-colors p-1" title="Editar Registro">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </button>
+                        </td>
                     </tr>
                     
                     <!-- Empty State -->
                     <tr *ngIf="data()?.items?.length === 0">
-                        <td colspan="6" class="p-12 text-center text-[var(--muted)]">
-                            No se encontraron registros.
+                        <td colspan="7" class="p-12 text-center text-[var(--muted)]">
+                            No se encontraron registros{{ searchControl.value ? ' que coincidan con "' + searchControl.value + '"' : '' }}.
                         </td>
                     </tr>
                 </tbody>
@@ -140,31 +168,28 @@ import { ChiefService } from '../../../core/services/chief.service';
       </div>
 
       <!-- Report Selection Modal -->
-      <div *ngIf="isReportModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div *ngIf="isReportModalOpen" class="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
         <div class="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] w-full max-w-md p-6 space-y-6 shadow-2xl animate-fade-in relative">
           <button (click)="isReportModalOpen = false" class="absolute top-4 right-4 text-[var(--muted)] hover:text-white transition-colors">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-
           <div>
             <h3 class="text-xl font-display font-medium text-white mb-1">GENERAR REPORTE</h3>
             <p class="text-[var(--muted)] text-sm font-mono">Seleccione el líder para filtrar el reporte electoral.</p>
           </div>
-
           <div class="space-y-4">
              <div class="mb-4">
                 <label class="block text-xs font-medium text-[var(--muted)] uppercase tracking-wider mb-1.5 ml-0.5">SELECCIONAR LÍDER</label>
                 <select 
                     [(ngModel)]="selectedLeaderId"
-                    class="w-full bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-sm)] px-3 py-2 text-white outline-none focus:border-[var(--primary)]"
+                    class="w-full bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-sm)] px-3 py-2 text-white outline-none focus:border-[var(--primary)] text-sm"
                 >
                     <option [value]="null">TODOS LOS LÍDERES</option>
                     <option *ngFor="let leader of leaderOptions" [value]="leader.id">{{ leader.nombre }}</option>
                 </select>
              </div>
-
             <div class="pt-4 flex flex-col gap-3">
               <app-ui-button variant="primary" [fullWidth]="true" (onClick)="downloadReportByLeader()" [loading]="generatingReport">
                 DESCARGAR REPORTE EXCEL
@@ -178,31 +203,28 @@ import { ChiefService } from '../../../core/services/chief.service';
       </div>
 
       <!-- Report Selection Modal (Chief) -->
-      <div *ngIf="isChiefReportModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div *ngIf="isChiefReportModalOpen" class="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
         <div class="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] w-full max-w-md p-6 space-y-6 shadow-2xl animate-fade-in relative">
           <button (click)="isChiefReportModalOpen = false" class="absolute top-4 right-4 text-[var(--muted)] hover:text-white transition-colors">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-
           <div>
             <h3 class="text-xl font-display font-medium text-white mb-1">GENERAR REPORTE (JEFE)</h3>
             <p class="text-[var(--muted)] text-sm font-mono">Seleccione el jefe para filtrar el reporte electoral.</p>
           </div>
-
           <div class="space-y-4">
              <div class="mb-4">
                 <label class="block text-xs font-medium text-[var(--muted)] uppercase tracking-wider mb-1.5 ml-0.5">SELECCIONAR JEFE</label>
                 <select 
                     [(ngModel)]="selectedChiefId"
-                    class="w-full bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-sm)] px-3 py-2 text-white outline-none focus:border-[var(--primary)]"
+                    class="w-full bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-sm)] px-3 py-2 text-white outline-none focus:border-[var(--primary)] text-sm"
                 >
                     <option [value]="null">TODOS LOS JEFES</option>
                     <option *ngFor="let chief of chiefOptions" [value]="chief.id">{{ chief.nombre }}</option>
                 </select>
              </div>
-
             <div class="pt-4 flex flex-col gap-3">
               <app-ui-button variant="primary" [fullWidth]="true" (onClick)="downloadReportByChief()" [loading]="generatingReport">
                 DESCARGAR REPORTE EXCEL
@@ -214,16 +236,77 @@ import { ChiefService } from '../../../core/services/chief.service';
           </div>
         </div>
       </div>
+
+      <!-- Edit Modal -->
+      <div *ngIf="isEditModalOpen" class="fixed inset-0 z-[130] flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
+        <div class="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] w-full max-w-2xl p-6 space-y-6 shadow-2xl animate-fade-in relative max-h-[90vh] overflow-y-auto">
+          <button (click)="closeEditModal()" class="absolute top-4 right-4 text-[var(--muted)] hover:text-white transition-colors">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div>
+            <h3 class="text-xl font-display font-medium text-white mb-1 uppercase tracking-tight">EDITAR REGISTRO</h3>
+            <p class="text-[var(--muted)] text-sm font-mono">Actualice los datos del votante antes de la próxima verificación.</p>
+          </div>
+          <form [formGroup]="editForm" (ngSubmit)="saveEdit()" class="space-y-4">
+            <app-ui-input 
+              label="CÉDULA" 
+              placeholder="Número de identificación" 
+              formControlName="cedula"
+              [required]="true"
+            ></app-ui-input>
+            <app-ui-input 
+              label="NOMBRE COMPLETO" 
+              placeholder="Nombres y Apellidos" 
+              formControlName="nombre"
+              [required]="true"
+            ></app-ui-input>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <app-ui-input 
+                label="TELÉFONO" 
+                placeholder="Número Celular" 
+                formControlName="telefono"
+              ></app-ui-input>
+              <div class="space-y-1.5">
+                  <label class="block text-xs font-medium text-[var(--muted)] uppercase tracking-wider ml-0.5">LÍDER ASIGNADO</label>
+                  <select 
+                      formControlName="leader_id"
+                      class="w-full bg-[var(--background)] border border-[var(--border)] rounded-[var(--radius-sm)] px-3 py-2 text-white outline-none focus:border-[var(--primary)] text-sm"
+                  >
+                      <option [value]="null">Seleccione un Líder</option>
+                      <option *ngFor="let leader of leaderOptions" [value]="leader.id">{{ leader.nombre }}</option>
+                  </select>
+              </div>
+            </div>
+            <div class="pt-6 flex gap-3">
+              <app-ui-button variant="outline" [fullWidth]="true" type="button" (onClick)="closeEditModal()">
+                CANCELAR
+              </app-ui-button>
+              <app-ui-button variant="secondary" [fullWidth]="true" type="submit" [loading]="isSavingEdit">
+                GUARDAR CAMBIOS
+              </app-ui-button>
+            </div>
+            <div *ngIf="editError" class="p-3 bg-red-500/10 border border-red-500/20 rounded-[var(--radius-sm)] text-red-400 text-xs font-mono text-center">
+                {{ editError }}
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   `
 })
 export class MyRecordsComponent implements OnInit {
     private voterService = inject(VoterService);
     private chiefService = inject(ChiefService);
+    private fb = inject(FormBuilder);
 
     data = signal<VoterResponse | null>(null);
     loading = signal(false);
     error = signal('');
+
+    // Search Logic
+    searchControl = new FormControl('');
 
     // Report Logic
     isReportModalOpen = false;
@@ -237,16 +320,41 @@ export class MyRecordsComponent implements OnInit {
     chiefOptions: any[] = [];
 
     currentPage = signal(1);
-    limit = 5; // Default to 5 as requested
+    limit = 5;
 
     // Tooltip State
     hoveredVoter: Voter | null = null;
     tooltipPosition = { top: 0, left: 0 };
 
+    // Edit State
+    isEditModalOpen = false;
+    isSavingEdit = false;
+    editingVoterId: string | null = null;
+    editError = '';
+    editForm = this.fb.group({
+        cedula: ['', [Validators.required, Validators.pattern('^[0-9]*$')]],
+        nombre: ['', [Validators.required, Validators.minLength(3)]],
+        telefono: ['', [Validators.pattern('^[0-9]*$')]],
+        leader_id: [null as string | null, [Validators.required]]
+    });
+
     ngOnInit() {
         this.loadRecords();
         this.loadLeaders();
         this.loadChiefs();
+
+        // Setup search debounce logic with 500ms delay
+        this.searchControl.valueChanges.pipe(
+            debounceTime(500),
+            distinctUntilChanged()
+        ).subscribe(() => {
+            this.currentPage.set(1);
+            this.loadRecords();
+        });
+    }
+
+    onSearchChange(query: string) {
+        // Method no longer needed with FormControl valueChanges
     }
 
     loadLeaders() {
@@ -267,7 +375,9 @@ export class MyRecordsComponent implements OnInit {
         this.loading.set(true);
         this.error.set('');
 
-        this.voterService.getMyRecords(this.currentPage(), this.limit).subscribe({
+        const query = this.searchControl.value || '';
+
+        this.voterService.getMyRecords(this.currentPage(), this.limit, query).subscribe({
             next: (response) => {
                 this.data.set(response);
                 this.loading.set(false);
@@ -343,7 +453,7 @@ export class MyRecordsComponent implements OnInit {
 
     changeLimit(newLimit: string) {
         this.limit = parseInt(newLimit, 10);
-        this.currentPage.set(1); // Reset to first page
+        this.currentPage.set(1);
         this.loadRecords();
     }
 
@@ -359,19 +469,60 @@ export class MyRecordsComponent implements OnInit {
     showTooltip(event: MouseEvent, voter: Voter) {
         const target = event.currentTarget as HTMLElement;
         const rect = target.getBoundingClientRect();
-
         const tooltipHeight = 100;
         const showBelow = rect.top < 150;
-
         this.hoveredVoter = voter;
-
         this.tooltipPosition = {
-            left: rect.left + (rect.width / 2) - 128, // Center
+            left: rect.left + (rect.width / 2) - 128,
             top: showBelow ? (rect.bottom + 10) : (rect.top - tooltipHeight - 10)
         };
     }
 
     hideTooltip() {
         this.hoveredVoter = null;
+    }
+
+    canEdit(voter: Voter): boolean {
+        return voter.verification_status === 'PENDING' || voter.verification_status === 'FAILED';
+    }
+
+    openEditModal(voter: Voter) {
+        this.editingVoterId = voter.id || null;
+        this.editError = '';
+        this.editForm.patchValue({
+            cedula: voter.cedula,
+            nombre: voter.nombre,
+            telefono: voter.telefono || '',
+            leader_id: voter.leader_id || (voter.leader?.id as any) || null
+        });
+        this.isEditModalOpen = true;
+    }
+
+    closeEditModal() {
+        this.isEditModalOpen = false;
+        this.editingVoterId = null;
+        this.editForm.reset();
+    }
+
+    saveEdit() {
+        if (this.editForm.invalid || !this.editingVoterId) {
+            this.editForm.markAllAsTouched();
+            return;
+        }
+        this.isSavingEdit = true;
+        this.editError = '';
+        const payload = this.editForm.value as Partial<Voter>;
+        this.voterService.updateVoter(this.editingVoterId, payload).subscribe({
+            next: () => {
+                this.isSavingEdit = false;
+                this.closeEditModal();
+                this.loadRecords();
+            },
+            error: (err) => {
+                this.isSavingEdit = false;
+                this.editError = err.error?.message || 'Error al actualizar el registro.';
+                console.error(err);
+            }
+        });
     }
 }

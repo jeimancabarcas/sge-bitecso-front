@@ -124,7 +124,7 @@ import { UiButtonComponent } from '../../shared/components/ui-button/ui-button.c
       </aside>
 
       <!-- Main Content -->
-      <main class="flex-1 overflow-auto relative z-10 w-full">
+      <main class="flex-1 overflow-auto relative w-full">
         <!-- Topbar -->
         <header class="h-16 flex items-center justify-between px-6 border-b border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-sm sticky top-0 z-30">
           <div class="flex items-center">

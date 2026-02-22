@@ -128,21 +128,25 @@ export class VoterService {
         return this.http.post(`${this.apiUrl}/voters`, voter);
     }
 
-    getMyRecords(page: number = 1, limit: number = 10): Observable<VoterResponse> {
-        return this.http.get<VoterResponse>(`${this.apiUrl}/voters/my-records`, {
-            params: { page: page.toString(), limit: limit.toString() }
-        });
+    getMyRecords(page: number = 1, limit: number = 10, search?: string): Observable<VoterResponse> {
+        const params: any = { page: page.toString(), limit: limit.toString() };
+        if (search) params.search = search;
+        return this.http.get<VoterResponse>(`${this.apiUrl}/voters/my-records`, { params });
     }
 
-    getVoters(page: number = 1, limit: number = 10): Observable<VoterResponse> {
-        return this.http.get<VoterResponse>(`${this.apiUrl}/voters`, {
-            params: { page: page.toString(), limit: limit.toString() }
-        });
+    getVoters(page: number = 1, limit: number = 10, search?: string): Observable<VoterResponse> {
+        const params: any = { page: page.toString(), limit: limit.toString() };
+        if (search) params.search = search;
+        return this.http.get<VoterResponse>(`${this.apiUrl}/voters`, { params });
     }
 
     getReportByChief(chiefId?: string): Observable<Blob> {
         const url = chiefId ? `${this.apiUrl}/voters/report-by-chief?chiefId=${chiefId}` : `${this.apiUrl}/voters/report-by-chief`;
         return this.http.get(url, { responseType: 'blob' });
+    }
+
+    updateVoter(id: string, voter: Partial<Voter>): Observable<any> {
+        return this.http.patch(`${this.apiUrl}/voters/${id}`, voter);
     }
 }
 
