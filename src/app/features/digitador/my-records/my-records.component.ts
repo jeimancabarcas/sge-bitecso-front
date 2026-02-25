@@ -51,17 +51,12 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
             </div>
 
             <div class="w-full md:w-48">
-                <select 
+                <app-ui-select
                     [(ngModel)]="selectedStatus"
-                    (change)="onStatusChange()"
-                    class="w-full bg-[var(--background)] border border-[var(--border)] rounded-[var(--radius-sm)] px-3 py-2 text-sm text-white outline-none focus:border-[var(--primary)]"
-                >
-                    <option value="">TODOS LOS ESTADOS</option>
-                    <option value="PENDING">PENDING</option>
-                    <option value="SUCCESS">SUCCESS</option>
-                    <option value="FAILED">FAILED</option>
-                    <option value="ERROR">ERROR</option>
-                </select>
+                    (ngModelChange)="onStatusChange()"
+                    [options]="statusOptions"
+                    placeholder="TODOS LOS ESTADOS"
+                ></app-ui-select>
             </div>
         </div>
 
@@ -106,10 +101,15 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
                         <td class="p-3 text-[var(--muted)] text-xs font-mono">
                             {{ voter.created_at | date:'short' }}
                         </td>
-                        <td class="p-3 text-center">
+                        <td class="p-3 text-center flex items-center justify-center space-x-1">
                             <button *ngIf="canEdit(voter)" (click)="openEditModal(voter)" class="text-[var(--secondary)] hover:text-[var(--secondary)]/80 transition-colors p-1" title="Editar Registro">
                                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </button>
+                            <button (click)="deleteVoter(voter.id!)" class="text-red-500 hover:text-red-400 transition-colors p-1" title="Eliminar Registro">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                             </button>
                         </td>
@@ -195,14 +195,13 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
           </div>
           <div class="space-y-4">
              <div class="mb-4">
-                <label class="block text-xs font-medium text-[var(--muted)] uppercase tracking-wider mb-1.5 ml-0.5">SELECCIONAR LÍDER</label>
-                <select 
+                <app-ui-select
+                    label="SELECCIONAR LÍDER"
                     [(ngModel)]="selectedLeaderId"
-                    class="w-full bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-sm)] px-3 py-2 text-white outline-none focus:border-[var(--primary)] text-sm"
-                >
-                    <option [value]="null">TODOS LOS LÍDERES</option>
-                    <option *ngFor="let leader of leaderOptions" [value]="leader.id">{{ leader.nombre }}</option>
-                </select>
+                    [options]="formattedLeaderOptions"
+                    placeholder="TODOS LOS LÍDERES"
+                    [searchable]="true"
+                ></app-ui-select>
              </div>
             <div class="pt-4 flex flex-col gap-3">
               <app-ui-button variant="primary" [fullWidth]="true" (onClick)="downloadReportByLeader()" [loading]="generatingReport">
@@ -230,14 +229,13 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
           </div>
           <div class="space-y-4">
              <div class="mb-4">
-                <label class="block text-xs font-medium text-[var(--muted)] uppercase tracking-wider mb-1.5 ml-0.5">SELECCIONAR JEFE</label>
-                <select 
+                <app-ui-select
+                    label="SELECCIONAR JEFE"
                     [(ngModel)]="selectedChiefId"
-                    class="w-full bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-sm)] px-3 py-2 text-white outline-none focus:border-[var(--primary)] text-sm"
-                >
-                    <option [value]="null">TODOS LOS JEFES</option>
-                    <option *ngFor="let chief of chiefOptions" [value]="chief.id">{{ chief.nombre }}</option>
-                </select>
+                    [options]="formattedChiefOptions"
+                    placeholder="TODOS LOS JEFES"
+                    [searchable]="true"
+                ></app-ui-select>
              </div>
             <div class="pt-4 flex flex-col gap-3">
               <app-ui-button variant="primary" [fullWidth]="true" (onClick)="downloadReportByChief()" [loading]="generatingReport">
@@ -283,14 +281,13 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
                 formControlName="telefono"
               ></app-ui-input>
               <div class="space-y-1.5">
-                  <label class="block text-xs font-medium text-[var(--muted)] uppercase tracking-wider ml-0.5">LÍDER ASIGNADO</label>
-                  <select 
+                  <app-ui-select 
+                      label="LÍDER ASIGNADO"
                       formControlName="leader_id"
-                      class="w-full bg-[var(--background)] border border-[var(--border)] rounded-[var(--radius-sm)] px-3 py-2 text-white outline-none focus:border-[var(--primary)] text-sm"
-                  >
-                      <option [value]="null">Seleccione un Líder</option>
-                      <option *ngFor="let leader of leaderOptions" [value]="leader.id">{{ leader.nombre }}</option>
-                  </select>
+                      [options]="formattedLeaderOptions.slice(1)"
+                      placeholder="Seleccione un Líder"
+                      [required]="true"
+                  ></app-ui-select>
               </div>
             </div>
             <div class="pt-6 flex gap-3">
@@ -328,11 +325,32 @@ export class MyRecordsComponent implements OnInit {
     generatingReport = false;
     selectedLeaderId: string | null = null;
     leaderOptions: any[] = [];
+    statusOptions = [
+        { label: 'TODOS LOS ESTADOS', value: '' },
+        { label: 'PENDING', value: 'PENDING' },
+        { label: 'SUCCESS', value: 'SUCCESS' },
+        { label: 'FAILED', value: 'FAILED' },
+        { label: 'ERROR', value: 'ERROR' }
+    ];
+
+    get formattedLeaderOptions() {
+        return [
+            { label: 'TODOS LOS LÍDERES', value: null },
+            ...this.leaderOptions.map(l => ({ label: l.nombre, value: l.id }))
+        ];
+    }
 
     // Chief Report Logic
     isChiefReportModalOpen = false;
     selectedChiefId: string | null = null;
     chiefOptions: any[] = [];
+
+    get formattedChiefOptions() {
+        return [
+            { label: 'TODOS LOS JEFES', value: null },
+            ...this.chiefOptions.map(c => ({ label: c.nombre, value: c.id }))
+        ];
+    }
 
     currentPage = signal(1);
     limit = 5;
@@ -542,6 +560,22 @@ export class MyRecordsComponent implements OnInit {
                 this.isSavingEdit = false;
                 this.editError = err.error?.message || 'Error al actualizar el registro.';
                 console.error(err);
+            }
+        });
+    }
+
+    deleteVoter(id: string) {
+        if (!confirm('¿Estás seguro de eliminar este registro? Esta acción no se puede deshacer.')) {
+            return;
+        }
+
+        this.voterService.deleteVoter(id).subscribe({
+            next: () => {
+                this.loadRecords();
+            },
+            error: (err) => {
+                console.error('Error deleting voter', err);
+                alert(err.error?.message || 'Error al eliminar el registro.');
             }
         });
     }

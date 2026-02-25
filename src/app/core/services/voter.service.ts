@@ -150,6 +150,10 @@ export class VoterService {
     updateVoter(id: string, voter: Partial<Voter>): Observable<any> {
         return this.http.patch(`${this.apiUrl}/voters/${id}`, voter);
     }
+
+    deleteVoter(id: string): Observable<any> {
+        return this.http.delete(`${this.apiUrl}/voters/${id}`);
+    }
 }
 
 function theMockStats(): Observable<DashboardStats> {

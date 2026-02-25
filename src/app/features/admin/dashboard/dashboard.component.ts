@@ -22,7 +22,7 @@ import { ChiefService, ChiefStats } from '../../../core/services/chief.service';
         <div class="flex items-center space-x-3">
            <app-ui-button variant="primary" size="sm" (onClick)="isReportModalOpen = true">REPORTE POR LÍDER</app-ui-button>
            <app-ui-button variant="primary" size="sm" (onClick)="isChiefReportModalOpen = true">REPORTE POR JEFE</app-ui-button>
-           <app-ui-button variant="outline" size="sm" (onClick)="downloadReport()">REPORTE GENERAL</app-ui-button>
+           <app-ui-button variant="outline" size="sm" (onClick)="downloadReport()" [loading]="loadingGeneralReport">REPORTE GENERAL</app-ui-button>
            <app-ui-button variant="outline" size="sm" (onClick)="refresh()" [loading]="loadingStats">REFRESCAR</app-ui-button>
         </div>
       </div>
@@ -536,6 +536,7 @@ export class DashboardComponent implements OnInit {
   totalPages: number = 1;
   loading: boolean = false; // Loading state (Voters)
   loadingStats: boolean = false; // Loading state (Stats)
+  loadingGeneralReport: boolean = false;
   limitOptions = [
     { value: 10, label: '10 registros' },
     { value: 20, label: '20 registros' },
@@ -643,7 +644,10 @@ export class DashboardComponent implements OnInit {
   }
 
   downloadReport() {
-    this.voterService.getReport().subscribe({
+    this.loadingGeneralReport = true;
+    this.voterService.getReport().pipe(
+      finalize(() => this.loadingGeneralReport = false)
+    ).subscribe({
       next: (blob: Blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
