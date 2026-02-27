@@ -281,10 +281,10 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
                 formControlName="telefono"
               ></app-ui-input>
               <div class="space-y-1.5">
-                  <app-ui-select 
+                  <app-ui-select
                       label="LÍDER ASIGNADO"
                       formControlName="leader_id"
-                      [options]="formattedLeaderOptions.slice(1)"
+                      [options]="editLeaderOptions"
                       placeholder="Seleccione un Líder"
                       [required]="true"
                   ></app-ui-select>
@@ -333,24 +333,12 @@ export class MyRecordsComponent implements OnInit {
         { label: 'ERROR', value: 'ERROR' }
     ];
 
-    get formattedLeaderOptions() {
-        return [
-            { label: 'TODOS LOS LÍDERES', value: null },
-            ...this.leaderOptions.map(l => ({ label: l.nombre, value: l.id }))
-        ];
-    }
-
-    // Chief Report Logic
+    formattedLeaderOptions: any[] = [];
+    editLeaderOptions: any[] = [];
     isChiefReportModalOpen = false;
     selectedChiefId: string | null = null;
     chiefOptions: any[] = [];
-
-    get formattedChiefOptions() {
-        return [
-            { label: 'TODOS LOS JEFES', value: null },
-            ...this.chiefOptions.map(c => ({ label: c.nombre, value: c.id }))
-        ];
-    }
+    formattedChiefOptions: any[] = [];
 
     currentPage = signal(1);
     limit = 5;
@@ -397,15 +385,29 @@ export class MyRecordsComponent implements OnInit {
 
     loadLeaders() {
         this.voterService.getLeaders().subscribe({
-            next: (data) => this.leaderOptions = data,
-            error: (err) => console.error('Error loading leaders for report', err)
+            next: (data: any[]) => {
+                this.leaderOptions = data;
+                const mapped = data.map(l => ({ label: l.nombre, value: l.id }));
+                this.formattedLeaderOptions = [
+                    { label: 'TODOS LOS LÍDERES', value: null },
+                    ...mapped
+                ];
+                this.editLeaderOptions = mapped;
+            },
+            error: (err: any) => console.error('Error loading leaders for report', err)
         });
     }
 
     loadChiefs() {
         this.chiefService.findAll().subscribe({
-            next: (data) => this.chiefOptions = data,
-            error: (err) => console.error('Error loading chiefs for report', err)
+            next: (data: any[]) => {
+                this.chiefOptions = data;
+                this.formattedChiefOptions = [
+                    { label: 'TODOS LOS JEFES', value: null },
+                    ...data.map(c => ({ label: c.nombre, value: c.id }))
+                ];
+            },
+            error: (err: any) => console.error('Error loading chiefs for report', err)
         });
     }
 
